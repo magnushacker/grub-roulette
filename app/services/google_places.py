@@ -5,9 +5,15 @@ Unlike the legacy Places API, this one returns cuisine-specific place types
 categories, which is what actually lets us show/filter by cuisine.
 """
 
+import math
+
 import httpx
 
 from app.config import settings
+
+# Meters -> degrees at a given latitude (good enough approximation at the
+# neighborhood/city scale we search at).
+_METERS_PER_DEGREE_LAT = 111_320
 
 NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
@@ -104,23 +110,51 @@ def _headers() -> dict:
     }
 
 
+def _search_quadrants(lat: float, lng: float, radius_m: int) -> list[tuple[float, float, float]]:
+    """Split a search circle into 4 smaller, overlapping circles that together
+    cover the original area.
+
+    Nearby Search caps every request at 20 results regardless of radius, so a
+    single call over a wide circle throws away anything past the top 20. Four
+    quarter-sized circles offset toward NE/SE/SW/NW each get their own 20-result
+    budget, so combined we can surface up to 80 (deduped) instead of 20.
+    """
+    sub_radius = radius_m * 0.75
+    offset = radius_m * 0.5 / math.sqrt(2)  # NE/SE/SW/NW component distance
+    deg_lat = offset / _METERS_PER_DEGREE_LAT
+    deg_lng = offset / (_METERS_PER_DEGREE_LAT * math.cos(math.radians(lat)))
+    return [
+        (lat + lat_sign * deg_lat, lng + lng_sign * deg_lng, sub_radius)
+        for lat_sign, lng_sign in [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+    ]
+
+
 def nearby_restaurants(lat: float, lng: float, radius_m: int) -> list[dict]:
     if not settings.google_places_api_key:
         return []
 
-    body = {
-        "includedTypes": ["restaurant"],
-        "maxResultCount": 20,
-        "locationRestriction": {
-            "circle": {"center": {"latitude": lat, "longitude": lng}, "radius": min(radius_m, 50000)}
-        },
-    }
+    results: dict[str, dict] = {}
     with httpx.Client(timeout=10.0) as client:
-        resp = client.post(NEARBY_URL, json=body, headers=_headers())
-        if resp.status_code != 200:
-            raise GooglePlacesError(f"Google Places error: {resp.status_code} - {resp.text}")
-        data = resp.json()
-        return [_normalize(p) for p in data.get("places", [])]
+        for sub_lat, sub_lng, sub_radius in _search_quadrants(lat, lng, radius_m):
+            body = {
+                "includedTypes": ["restaurant"],
+                "maxResultCount": 20,
+                "locationRestriction": {
+                    "circle": {
+                        "center": {"latitude": sub_lat, "longitude": sub_lng},
+                        "radius": min(sub_radius, 50000),
+                    }
+                },
+            }
+            resp = client.post(NEARBY_URL, json=body, headers=_headers())
+            if resp.status_code != 200:
+                raise GooglePlacesError(f"Google Places error: {resp.status_code} - {resp.text}")
+            for place in resp.json().get("places", []):
+                normalized = _normalize(place)
+                place_id = normalized["google_place_id"]
+                if place_id and place_id not in results:
+                    results[place_id] = normalized
+    return list(results.values())
 
 
 def text_search_restaurants(query: str, lat: float | None = None, lng: float | None = None) -> list[dict]:
