@@ -4,9 +4,13 @@ import time
 
 from fastapi.templating import Jinja2Templates
 
+from app.config import settings
+
 templates = Jinja2Templates(directory="app/templates")
 
 # Bumped on every process start (which reload=True triggers on every code
 # change), so static assets get a fresh URL and browsers can't serve a
 # stale cached copy of a CSS/JS file that's actually changed.
 templates.env.globals["static_version"] = str(int(time.time()))
+
+templates.env.globals["exclude_days"] = settings.exclude_days

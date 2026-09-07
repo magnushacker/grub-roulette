@@ -23,6 +23,7 @@
         </a>
         {% if user %}
         <div class="topbar-right">
+            <button type="button" id="open-help-modal" class="link-button">How it works</button>
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>
             {% if user.is_admin %}
             <a href="/admin" class="link-button">Admin</a>
@@ -31,6 +32,44 @@
                 <button type="submit" class="link-button">Log out</button>
             </form>
         </div>
+        <dialog id="help-modal">
+            <h2>How the pick gets chosen</h2>
+
+            <h3>First, some places get ruled out</h3>
+            <ul>
+                <li>Anywhere you or a joining colleague has <strong>blacklisted</strong></li>
+                <li>Anywhere serving a cuisine you or a joining colleague marked as <strong>don't want suggested</strong></li>
+                <li>Anywhere you've logged a visit to in the last {{ exclude_days }} days</li>
+                <li>Anything outside your search radius</li>
+            </ul>
+
+            <h3>Then everything left gets scored on:</h3>
+            <ul>
+                <li><strong>Rating (45%)</strong> — see below for how this is built</li>
+                <li><strong>Distance (25%)</strong> — closer beats farther, scaled across your search radius</li>
+                <li><strong>Preferred cuisine (15%)</strong> — a bonus if it matches a cuisine you or a colleague marked as preferred</li>
+                <li><strong>Randomness (15%)</strong> — a small random nudge, so it's not the exact same answer every time</li>
+            </ul>
+
+            <h3>Where the rating comes from</h3>
+            <p class="hint">In priority order, using the highest-confidence source available for that specific place:</p>
+            <ul>
+                <li>If you or a joining colleague has <strong>rated this exact restaurant</strong>, that rating mostly decides it (blended a bit with its Google/Yelp rating)</li>
+                <li>Otherwise, if you or a colleague has rated <strong>other restaurants of the same cuisine</strong>, that cuisine track record counts for something (blended more heavily with Google/Yelp)</li>
+                <li>Otherwise, it just falls back to the average Google/Yelp rating</li>
+            </ul>
+
+            <h3>Why it's not always the top scorer</h3>
+            <p class="hint">The highest-scoring places are most likely to get picked, but not guaranteed — it's a weighted draw among the top few, which is what keeps "Find lunch" feeling like a roulette spin instead of the same answer every day.</p>
+
+            <div class="modal-actions">
+                <button type="button" id="help-close" class="primary">Got it</button>
+            </div>
+        </dialog>
+        <script>
+            document.getElementById("open-help-modal").addEventListener("click", () => document.getElementById("help-modal").showModal());
+            document.getElementById("help-close").addEventListener("click", () => document.getElementById("help-modal").close());
+        </script>
         <dialog id="account-modal">
             <h2>Your account</h2>
 

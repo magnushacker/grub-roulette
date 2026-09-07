@@ -325,14 +325,27 @@ button.secondary {
     padding: 0 0 0 4px;
 }
 
-dialog#account-modal {
+dialog#account-modal, dialog#help-modal {
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
     min-width: 280px;
 }
 
-dialog#account-modal::backdrop {
+dialog#help-modal {
+    max-width: 480px;
+}
+
+dialog#help-modal ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+dialog#help-modal li {
+    margin-bottom: 4px;
+}
+
+dialog#account-modal::backdrop, dialog#help-modal::backdrop {
     background: rgba(0, 0, 0, 0.3);
 }
 
