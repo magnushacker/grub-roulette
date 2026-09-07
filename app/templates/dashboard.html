@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Lunch Picker{% endblock %}
+{% block content %}
+<div class="layout">
+    <section class="panel">
+        <h2>1. Pick your starting point</h2>
+        <p class="hint">Click the map to drop a pin, or search an address.</p>
+        <div id="map"></div>
+        <label>Search radius: <span id="radius-value">{{ default_radius_m }}</span> m
+            <input type="range" id="radius" min="300" max="2000" step="50" value="{{ default_radius_m }}">
+        </label>
+
+        <h2>2. Who's joining?</h2>
+        <div id="companions" class="companions-list">Loading colleagues...</div>
+        <select id="companion-picker">
+            <option value="">Add a colleague from another office...</option>
+        </select>
+
+        <h2>3. Your preferences</h2>
+        <label>Cuisines you prefer</label>
+        <div id="preferred-cuisines" class="chip-list">Loading cuisines...</div>
+
+        <label>Cuisines you don't want suggested</label>
+        <div id="disliked-cuisines" class="chip-list">Loading cuisines...</div>
+        <p class="hint">Your location, colleagues, and cuisine picks are saved automatically.</p>
+
+        <button id="find-lunch" class="primary">Find lunch</button>
+    </section>
+
+    <section class="panel">
+        <h2>Suggestion</h2>
+        <div id="result">
+            <p class="hint">Pick a location and hit "Find lunch" to get a suggestion.</p>
+        </div>
+
+        <h3>Other options nearby</h3>
+        <div id="alternatives"></div>
+    </section>
+</div>
+
+<template id="restaurant-card-template">
+    <div class="restaurant-card">
+        <h3 class="r-name"></h3>
+        <p class="r-address"></p>
+        <p class="r-meta"></p>
+        <div class="r-cuisines"></div>
+        <div class="star-picker" data-stars="0">
+            <span data-star="1">&#9733;</span><span data-star="2">&#9733;</span><span data-star="3">&#9733;</span><span data-star="4">&#9733;</span><span data-star="5">&#9733;</span>
+        </div>
+        <div class="r-actions">
+            <button class="btn-blacklist">Blacklist</button>
+            <a class="r-maps-link" href="#" target="_blank" rel="noopener">Open in Google Maps</a>
+        </div>
+        <div class="visit-confirm">
+            <p>Did you actually go here today?</p>
+            <button class="btn-went-here">Yes, I went here</button>
+            <button class="btn-went-elsewhere">No, I went somewhere else</button>
+            <div class="elsewhere-search" hidden>
+                <input type="text" class="elsewhere-input" placeholder="Search restaurant name...">
+                <div class="elsewhere-results"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+<script src="/static/js/dashboard.js?v={{ static_version }}"></script>
+{% endblock %}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lunch Picker{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css?v={{ static_version }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="/">Lunch Picker</a>
+        {% if user %}
+        <div class="topbar-right">
+            <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>
+            {% if user.is_admin %}
+            <a href="/admin" class="link-button">Admin</a>
+            {% endif %}
+            <form method="post" action="/logout" style="display:inline">
+                <button type="submit" class="link-button">Log out</button>
+            </form>
+        </div>
+        <dialog id="account-modal">
+            <h2>Your account</h2>
+
+            <label>Office
+                <select id="account-group-select"></select>
+            </label>
+            <div id="account-new-group" hidden>
+                <label>New office name<input type="text" id="account-new-group-name"></label>
+                <button type="button" id="account-create-group" class="secondary">Create office</button>
+            </div>
+
+            <h3>Your blacklist</h3>
+            <div id="account-blacklist" class="scroll-list">Loading...</div>
+
+            <h3>Your ratings</h3>
+            <div id="account-ratings" class="scroll-list">Loading...</div>
+
+            <h3>Blacklist or log a visit</h3>
+            <p class="hint">For a place you went to without using "Find lunch" — search it by name.</p>
+            <input type="text" id="account-restaurant-search" placeholder="Search restaurant name...">
+            <div id="account-restaurant-results" class="scroll-list"></div>
+
+            <p id="account-modal-status" class="hint"></p>
+            <div class="modal-actions">
+                <button type="button" id="account-save" class="primary">Save office</button>
+                <button type="button" id="account-cancel" class="secondary">Close</button>
+            </div>
+        </dialog>
+        <script src="/static/js/account.js?v={{ static_version }}"></script>
+        {% endif %}
+    </header>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

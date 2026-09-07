@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Register - Lunch Picker{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1>Create an account</h1>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/register">
+        <label>Name<input type="text" name="display_name" required autofocus></label>
+        <label>Password<input type="password" name="password" required></label>
+        <label>Office
+            <select name="group_id" id="group-select">
+                <option value="">No office</option>
+                {% for g in groups %}
+                <option value="{{ g.id }}">{{ g.name }}</option>
+                {% endfor %}
+                <option value="__new__">+ Add a new office...</option>
+            </select>
+        </label>
+        <label id="new-group-label" hidden>New office name
+            <input type="text" name="new_group_name" id="new-group-name">
+        </label>
+        <button type="submit">Create account</button>
+    </form>
+    <p>Already have an account? <a href="/login">Log in</a></p>
+</div>
+<script>
+    const groupSelect = document.getElementById("group-select");
+    const newGroupLabel = document.getElementById("new-group-label");
+    groupSelect.addEventListener("change", () => {
+        newGroupLabel.hidden = groupSelect.value !== "__new__";
+    });
+</script>
+{% endblock %}

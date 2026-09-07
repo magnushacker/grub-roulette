@@ -1,0 +1,381 @@
+let map, marker;
+let origin = null; // {lat, lng}
+let selectedCompanionIds = [];
+let me = null;
+let restaurantMarkers = new Map(); // restaurant id -> google.maps.Marker
+let infoWindow = null;
+let highlightedCard = null;
+let cuisineUniverse = new Map(); // lowercase cuisine -> display-cased value
+
+function initMap() {
+    const hasDefault = me && me.default_lat != null;
+    const startingCenter = hasDefault
+        ? { lat: me.default_lat, lng: me.default_lng }
+        : { lat: 40.7128, lng: -74.006 };
+
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: startingCenter,
+        zoom: hasDefault ? 15 : 13,
+    });
+
+    map.addListener("click", (e) => setOrigin(e.latLng.lat(), e.latLng.lng(), true));
+
+    if (hasDefault) {
+        setOrigin(me.default_lat, me.default_lng, false);
+    } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                map.setZoom(15);
+                setOrigin(pos.coords.latitude, pos.coords.longitude, true);
+            },
+            () => {} // ignore denial, user can click the map instead
+        );
+    }
+}
+
+function setOrigin(lat, lng, save) {
+    origin = { lat, lng };
+    if (marker) {
+        marker.setPosition({ lat, lng });
+    } else {
+        marker = new google.maps.Marker({ position: { lat, lng }, map });
+    }
+    if (save) saveState();
+}
+
+function clearRestaurantMarkers() {
+    for (const m of restaurantMarkers.values()) m.setMap(null);
+    restaurantMarkers.clear();
+    if (infoWindow) infoWindow.close();
+}
+
+function plotRestaurantMarkers(pick, alternatives) {
+    clearRestaurantMarkers();
+    const bounds = new google.maps.LatLngBounds();
+    if (origin) bounds.extend(origin);
+
+    const entries = [];
+    if (pick) entries.push([pick, true]);
+    for (const alt of alternatives) entries.push([alt, false]);
+
+    for (const [r, isPick] of entries) {
+        const position = { lat: r.lat, lng: r.lng };
+        const m = new google.maps.Marker({
+            position,
+            map,
+            title: r.name,
+            icon: `http://maps.google.com/mapfiles/ms/icons/${isPick ? "green" : "blue"}-dot.png`,
+        });
+        m.addListener("click", () => focusRestaurant(r.id));
+        restaurantMarkers.set(r.id, m);
+        bounds.extend(position);
+    }
+    if (entries.length > 0) map.fitBounds(bounds);
+}
+
+function focusRestaurant(id) {
+    const m = restaurantMarkers.get(id);
+    if (m) {
+        map.panTo(m.getPosition());
+        if (infoWindow) infoWindow.close();
+        infoWindow = new google.maps.InfoWindow({ content: m.getTitle() });
+        infoWindow.open(map, m);
+        m.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(() => m.setAnimation(null), 1400);
+    }
+
+    const card = document.querySelector(`[data-restaurant-id="${id}"]`);
+    if (card) {
+        if (highlightedCard) highlightedCard.classList.remove("highlighted");
+        card.classList.add("highlighted");
+        highlightedCard = card;
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+
+async function loadCompanions() {
+    const el = document.getElementById("companions");
+    const res = await fetch("/api/users");
+    const users = await res.json();
+    if (users.length === 0) {
+        el.textContent = "No colleagues registered yet.";
+        return;
+    }
+    const defaults = new Set(me ? me.default_companion_ids : []);
+    el.innerHTML = "";
+    for (const u of users) {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = u.id;
+        checkbox.checked = defaults.has(u.id);
+        checkbox.addEventListener("change", () => {
+            selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
+            saveState();
+        });
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(u.display_name));
+        el.appendChild(label);
+    }
+    selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
+}
+
+function renderCuisineCheckboxes(containerId, cuisines, selected) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = "";
+    if (cuisines.length === 0) {
+        el.textContent = "None yet — run a search to see cuisine options here.";
+        return;
+    }
+    const selectedLower = new Set(selected.map((s) => s.toLowerCase()));
+    for (const c of cuisines) {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = c;
+        checkbox.checked = selectedLower.has(c.toLowerCase());
+        checkbox.addEventListener("change", saveState);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(c.replace(/_/g, " ")));
+        el.appendChild(label);
+    }
+}
+
+function checkedValues(containerId) {
+    return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map((c) => c.value);
+}
+
+// Grows as search results come in, rather than listing every cuisine ever cached.
+function addToCuisineUniverse(cuisines) {
+    let changed = false;
+    for (const c of cuisines || []) {
+        const key = c.toLowerCase();
+        if (!cuisineUniverse.has(key)) {
+            cuisineUniverse.set(key, c);
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+function refreshCuisineCheckboxes() {
+    const cuisines = Array.from(cuisineUniverse.values()).sort((a, b) => a.localeCompare(b));
+    const preferredSelected = checkedValues("preferred-cuisines");
+    const dislikedSelected = checkedValues("disliked-cuisines");
+    renderCuisineCheckboxes("preferred-cuisines", cuisines, preferredSelected);
+    renderCuisineCheckboxes("disliked-cuisines", cuisines, dislikedSelected);
+}
+
+async function loadPreferences() {
+    const meRes = await fetch("/api/users/me");
+    me = await meRes.json();
+    addToCuisineUniverse(me.preferred_cuisines);
+    addToCuisineUniverse(me.disliked_cuisines);
+    // Seed straight from `me`, not refreshCuisineCheckboxes()'s DOM-reading logic —
+    // the checkbox containers are still empty at this point (nothing to read yet),
+    // so that path would silently render everything unchecked.
+    const cuisines = Array.from(cuisineUniverse.values()).sort((a, b) => a.localeCompare(b));
+    renderCuisineCheckboxes("preferred-cuisines", cuisines, me.preferred_cuisines);
+    renderCuisineCheckboxes("disliked-cuisines", cuisines, me.disliked_cuisines);
+}
+
+async function saveState() {
+    await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            preferred_cuisines: checkedValues("preferred-cuisines"),
+            disliked_cuisines: checkedValues("disliked-cuisines"),
+            default_companion_ids: selectedCompanionIds,
+            default_lat: origin ? origin.lat : null,
+            default_lng: origin ? origin.lng : null,
+        }),
+    });
+}
+
+function ratingLine(r) {
+    const parts = [];
+    if (r.combined_rating != null) parts.push(`${r.combined_rating.toFixed(1)} ★`);
+    if (r.google_rating != null) parts.push(`Google ${r.google_rating} (${r.google_rating_count ?? 0})`);
+    if (r.yelp_rating != null) parts.push(`Yelp ${r.yelp_rating} (${r.yelp_rating_count ?? 0})`);
+    if (r.distance_m != null) parts.push(`${Math.round(r.distance_m)} m away`);
+    if (r.price_level != null) parts.push("$".repeat(r.price_level));
+    return parts.join(" · ");
+}
+
+function renderRestaurantCard(r, container) {
+    const template = document.getElementById("restaurant-card-template");
+    const node = template.content.cloneNode(true);
+    const card = node.querySelector(".restaurant-card");
+    card.dataset.restaurantId = r.id;
+    card.addEventListener("click", (e) => {
+        if (e.target.closest("button, a, input")) return;
+        focusRestaurant(r.id);
+    });
+
+    card.querySelector(".r-name").textContent = r.name;
+    card.querySelector(".r-address").textContent = r.address;
+    card.querySelector(".r-meta").textContent = ratingLine(r);
+
+    const cuisinesEl = card.querySelector(".r-cuisines");
+    for (const c of r.cuisines.slice(0, 5)) {
+        const span = document.createElement("span");
+        span.textContent = c.replace(/_/g, " ");
+        cuisinesEl.appendChild(span);
+    }
+
+    const mapsLink = card.querySelector(".r-maps-link");
+    if (r.maps_url) {
+        mapsLink.href = r.maps_url;
+    } else {
+        mapsLink.remove();
+    }
+
+    const starPicker = card.querySelector(".star-picker");
+    const stars = starPicker.querySelectorAll("span");
+    const highlight = (n) => stars.forEach((s, i) => s.classList.toggle("filled", i < n));
+    if (r.personal_rating) highlight(Math.round(r.personal_rating));
+    stars.forEach((s) => {
+        s.addEventListener("click", async () => {
+            const n = parseInt(s.dataset.star, 10);
+            highlight(n);
+            await fetch(`/api/restaurants/${r.id}/rate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stars: n }),
+            });
+        });
+    });
+
+    card.querySelector(".btn-blacklist").addEventListener("click", async () => {
+        await fetch(`/api/restaurants/${r.id}/blacklist`, { method: "POST" });
+        const m = restaurantMarkers.get(r.id);
+        if (m) {
+            m.setMap(null);
+            restaurantMarkers.delete(r.id);
+        }
+        card.remove();
+    });
+
+    const confirmSection = card.querySelector(".visit-confirm");
+    const markConfirmed = (name) => {
+        confirmSection.innerHTML = `<p class="confirmed">Logged: lunch at ${name}</p>`;
+    };
+
+    card.querySelector(".btn-went-here").addEventListener("click", async () => {
+        await fetch("/api/visits", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ restaurant_id: r.id, was_suggested: true, companion_ids: selectedCompanionIds }),
+        });
+        markConfirmed(r.name);
+    });
+
+    const elsewhereBox = card.querySelector(".elsewhere-search");
+    const elsewhereInput = card.querySelector(".elsewhere-input");
+    const elsewhereResults = card.querySelector(".elsewhere-results");
+
+    card.querySelector(".btn-went-elsewhere").addEventListener("click", () => {
+        elsewhereBox.hidden = false;
+        elsewhereInput.focus();
+    });
+
+    let searchTimer = null;
+    elsewhereInput.addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        const q = elsewhereInput.value.trim();
+        if (q.length < 2) {
+            elsewhereResults.innerHTML = "";
+            return;
+        }
+        searchTimer = setTimeout(async () => {
+            const params = new URLSearchParams({ q });
+            if (origin) {
+                params.set("lat", origin.lat);
+                params.set("lng", origin.lng);
+            }
+            const res = await fetch(`/api/restaurants/search?${params}`);
+            const found = await res.json();
+            elsewhereResults.innerHTML = "";
+            for (const f of found) {
+                const btn = document.createElement("button");
+                btn.textContent = `${f.name} — ${f.address}`;
+                btn.addEventListener("click", async () => {
+                    await fetch("/api/visits", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            restaurant_id: f.id,
+                            was_suggested: false,
+                            companion_ids: selectedCompanionIds,
+                        }),
+                    });
+                    markConfirmed(f.name);
+                });
+                elsewhereResults.appendChild(btn);
+            }
+        }, 350);
+    });
+
+    container.appendChild(card);
+}
+
+async function findLunch() {
+    const resultEl = document.getElementById("result");
+    const altEl = document.getElementById("alternatives");
+
+    if (!origin) {
+        resultEl.innerHTML = '<p class="error">Pick a starting location on the map first.</p>';
+        return;
+    }
+
+    resultEl.innerHTML = "<p>Looking for a good spot...</p>";
+    altEl.innerHTML = "";
+    clearRestaurantMarkers();
+
+    const radius_m = parseInt(document.getElementById("radius").value, 10);
+    const res = await fetch("/api/restaurants/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: origin.lat, lng: origin.lng, radius_m, companion_ids: selectedCompanionIds }),
+    });
+
+    if (!res.ok) {
+        resultEl.innerHTML = '<p class="error">Something went wrong fetching restaurants.</p>';
+        return;
+    }
+
+    const data = await res.json();
+    resultEl.innerHTML = "";
+    if (!data.pick) {
+        resultEl.innerHTML = "<p>No restaurants found nearby that fit everyone's preferences. Try widening the radius.</p>";
+        return;
+    }
+    renderRestaurantCard(data.pick, resultEl);
+
+    altEl.innerHTML = "";
+    if (data.alternatives.length === 0) {
+        altEl.innerHTML = '<p class="hint">No other nearby options.</p>';
+    }
+    for (const alt of data.alternatives) {
+        renderRestaurantCard(alt, altEl);
+    }
+
+    plotRestaurantMarkers(data.pick, data.alternatives);
+
+    const foundCuisines = [...(data.pick ? data.pick.cuisines : []), ...data.alternatives.flatMap((a) => a.cuisines)];
+    if (addToCuisineUniverse(foundCuisines)) {
+        refreshCuisineCheckboxes();
+    }
+}
+
+document.getElementById("radius").addEventListener("input", (e) => {
+    document.getElementById("radius-value").textContent = e.target.value;
+});
+document.getElementById("find-lunch").addEventListener("click", findLunch);
+
+loadPreferences().then(() => {
+    initMap();
+    loadCompanions();
+});

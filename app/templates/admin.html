@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Admin - Lunch Picker{% endblock %}
+{% block content %}
+<section class="panel">
+    <h2>Users</h2>
+    <table class="admin-table" id="users-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Office</th>
+                <th>Admin</th>
+                <th>Joined</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+    </table>
+</section>
+
+<section class="panel">
+    <h2>Offices</h2>
+    <div id="groups-list" class="companions-list"></div>
+    <label>New office name
+        <input type="text" id="new-group-name" placeholder="e.g. Gothenburg office">
+    </label>
+    <button id="add-group" class="secondary">Add office</button>
+</section>
+
+<script src="/static/js/admin.js?v={{ static_version }}"></script>
+{% endblock %}
