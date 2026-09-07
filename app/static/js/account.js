@@ -12,7 +12,7 @@ async function populateAccountGroupSelect() {
     accountGroupSelect.innerHTML = "";
     const noneOpt = document.createElement("option");
     noneOpt.value = "";
-    noneOpt.textContent = "No office";
+    noneOpt.textContent = "No location";
     accountGroupSelect.appendChild(noneOpt);
     for (const g of groups) {
         const opt = document.createElement("option");
@@ -23,7 +23,7 @@ async function populateAccountGroupSelect() {
     }
     const newOpt = document.createElement("option");
     newOpt.value = "__new__";
-    newOpt.textContent = "+ Add a new office...";
+    newOpt.textContent = "+ Add a new location...";
     accountGroupSelect.appendChild(newOpt);
 
     accountNewGroup.hidden = true;
@@ -55,7 +55,7 @@ document.getElementById("account-create-group").addEventListener("click", async 
 document.getElementById("account-save").addEventListener("click", async () => {
     const value = accountGroupSelect.value;
     if (value === "__new__") {
-        accountStatus.textContent = "Create the new office first, or pick an existing one.";
+        accountStatus.textContent = "Create the new location first, or pick an existing one.";
         return;
     }
     await fetch("/api/users/me/group", {

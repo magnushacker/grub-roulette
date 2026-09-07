@@ -18,7 +18,7 @@ def dashboard(request: Request, user: User | None = Depends(get_current_user_opt
         {
             "request": request,
             "user": user,
-            "default_radius_m": settings.default_radius_m,
+            "default_radius_m": user.default_radius_m or settings.default_radius_m,
             "google_maps_api_key": settings.google_maps_js_api_key or settings.google_places_api_key,
         },
     )

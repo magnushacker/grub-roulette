@@ -51,6 +51,7 @@ class PreferencesRequest(BaseModel):
     default_companion_ids: list[int] = Field(default_factory=list)
     default_lat: float | None = None
     default_lng: float | None = None
+    default_radius_m: int | None = None
 
 
 class UserOut(BaseModel):
@@ -62,6 +63,7 @@ class UserOut(BaseModel):
     default_companion_ids: list[int]
     default_lat: float | None
     default_lng: float | None
+    default_radius_m: int | None
 
     model_config = {"from_attributes": True}
 

@@ -31,6 +31,7 @@ def update_preferences(body: PreferencesRequest, db: Session = Depends(get_db), 
     current.default_companion_ids = body.default_companion_ids
     current.default_lat = body.default_lat
     current.default_lng = body.default_lng
+    current.default_radius_m = body.default_radius_m
     db.commit()
     db.refresh(current)
     return current

@@ -7,16 +7,16 @@
     <form method="post" action="/register">
         <label>Name<input type="text" name="display_name" required autofocus></label>
         <label>Password<input type="password" name="password" required></label>
-        <label>Office
+        <label>Location
             <select name="group_id" id="group-select">
-                <option value="">No office</option>
+                <option value="">No location</option>
                 {% for g in groups %}
                 <option value="{{ g.id }}">{{ g.name }}</option>
                 {% endfor %}
-                <option value="__new__">+ Add a new office...</option>
+                <option value="__new__">+ Add a new location...</option>
             </select>
         </label>
-        <label id="new-group-label" hidden>New office name
+        <label id="new-group-label" hidden>New location name
             <input type="text" name="new_group_name" id="new-group-name">
         </label>
         <button type="submit">Create account</button>

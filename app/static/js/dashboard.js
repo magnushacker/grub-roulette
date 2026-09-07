@@ -94,32 +94,81 @@ function focusRestaurant(id) {
     }
 }
 
+const pickableCompanions = new Map(); // id -> user, for colleagues from other locations not yet added
+
+function addCompanionCheckbox(u, checked) {
+    const el = document.getElementById("companions");
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = u.id;
+    checkbox.checked = checked;
+    checkbox.addEventListener("change", () => {
+        selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
+        saveState();
+    });
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(u.display_name));
+    el.appendChild(label);
+}
+
 async function loadCompanions() {
     const el = document.getElementById("companions");
-    const res = await fetch("/api/users");
-    const users = await res.json();
+    const picker = document.getElementById("companion-picker");
+    const [usersRes, groupsRes] = await Promise.all([fetch("/api/users"), fetch("/api/groups")]);
+    const users = await usersRes.json();
+    const groups = await groupsRes.json();
     if (users.length === 0) {
         el.textContent = "No colleagues registered yet.";
+        picker.hidden = true;
         return;
     }
+    const groupName = new Map(groups.map((g) => [g.id, g.name]));
     const defaults = new Set(me ? me.default_companion_ids : []);
+    const myGroupId = me ? me.group_id : null;
+
+    // Show colleagues in the same location by default. Anyone already picked
+    // as a default companion stays visible too, even from another location,
+    // so a saved cross-location pick doesn't silently disappear.
+    const sameLocation = users.filter((u) => u.group_id === myGroupId);
+    const otherLocation = users.filter((u) => u.group_id !== myGroupId);
+    const visible = [...sameLocation, ...otherLocation.filter((u) => defaults.has(u.id))];
+
     el.innerHTML = "";
-    for (const u of users) {
-        const label = document.createElement("label");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = u.id;
-        checkbox.checked = defaults.has(u.id);
-        checkbox.addEventListener("change", () => {
-            selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
-            saveState();
-        });
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(u.display_name));
-        el.appendChild(label);
+    if (visible.length === 0) {
+        el.textContent = "No colleagues in your location yet — add one from another location below.";
+    } else {
+        for (const u of visible) addCompanionCheckbox(u, defaults.has(u.id));
     }
     selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
+
+    pickableCompanions.clear();
+    picker.innerHTML = '<option value="">Add a colleague from another location...</option>';
+    for (const u of otherLocation.filter((u) => !defaults.has(u.id))) {
+        pickableCompanions.set(u.id, u);
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = `${u.display_name} (${groupName.get(u.group_id) || "no location"})`;
+        picker.appendChild(opt);
+    }
+    picker.hidden = pickableCompanions.size === 0;
 }
+
+document.getElementById("companion-picker").addEventListener("change", (e) => {
+    const id = parseInt(e.target.value, 10);
+    const u = pickableCompanions.get(id);
+    if (!u) return;
+    if (document.getElementById("companions").textContent === "No colleagues in your location yet — add one from another location below.") {
+        document.getElementById("companions").innerHTML = "";
+    }
+    addCompanionCheckbox(u, true);
+    pickableCompanions.delete(id);
+    e.target.querySelector(`option[value="${id}"]`).remove();
+    e.target.value = "";
+    e.target.hidden = pickableCompanions.size === 0;
+    selectedCompanionIds = Array.from(document.querySelectorAll("#companions input:checked")).map((c) => parseInt(c.value, 10));
+    saveState();
+});
 
 function renderCuisineCheckboxes(containerId, cuisines, selected) {
     const el = document.getElementById(containerId);
@@ -190,6 +239,7 @@ async function saveState() {
             default_companion_ids: selectedCompanionIds,
             default_lat: origin ? origin.lat : null,
             default_lng: origin ? origin.lng : null,
+            default_radius_m: parseInt(document.getElementById("radius").value, 10),
         }),
     });
 }
@@ -373,6 +423,7 @@ async function findLunch() {
 document.getElementById("radius").addEventListener("input", (e) => {
     document.getElementById("radius-value").textContent = e.target.value;
 });
+document.getElementById("radius").addEventListener("change", saveState);
 document.getElementById("find-lunch").addEventListener("click", findLunch);
 
 loadPreferences().then(() => {

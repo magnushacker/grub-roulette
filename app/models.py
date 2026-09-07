@@ -39,6 +39,7 @@ class User(Base):
     default_companion_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
     default_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    default_radius_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     group: Mapped["Group | None"] = relationship(back_populates="members")

@@ -9,7 +9,18 @@
 </head>
 <body>
     <header class="topbar">
-        <a class="brand" href="/">Grub Roulette</a>
+        <a class="brand" href="/">
+            <svg class="brand-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9.25" stroke="var(--border)" stroke-width="1.5"/>
+                <g stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+                    <line x1="8.5" y1="6" x2="8.5" y2="10.5"/>
+                    <line x1="12" y1="6" x2="12" y2="18"/>
+                    <line x1="15.5" y1="6" x2="15.5" y2="10.5"/>
+                    <path d="M8.5 10.5c0 1.6 1.2 2.4 3.5 2.4s3.5-.8 3.5-2.4" fill="none"/>
+                </g>
+            </svg>
+            <span>Grub Roulette</span>
+        </a>
         {% if user %}
         <div class="topbar-right">
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>
@@ -23,12 +34,12 @@
         <dialog id="account-modal">
             <h2>Your account</h2>
 
-            <label>Office
+            <label>Location
                 <select id="account-group-select"></select>
             </label>
             <div id="account-new-group" hidden>
-                <label>New office name<input type="text" id="account-new-group-name"></label>
-                <button type="button" id="account-create-group" class="secondary">Create office</button>
+                <label>New location name<input type="text" id="account-new-group-name"></label>
+                <button type="button" id="account-create-group" class="secondary">Create location</button>
             </div>
 
             <h3>Your blacklist</h3>
@@ -44,7 +55,7 @@
 
             <p id="account-modal-status" class="hint"></p>
             <div class="modal-actions">
-                <button type="button" id="account-save" class="primary">Save office</button>
+                <button type="button" id="account-save" class="primary">Save</button>
                 <button type="button" id="account-cancel" class="secondary">Close</button>
             </div>
         </dialog>

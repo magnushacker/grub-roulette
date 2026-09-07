@@ -10,7 +10,7 @@ function renderGroupsList() {
     const el = document.getElementById("groups-list");
     el.innerHTML = "";
     if (groups.length === 0) {
-        el.textContent = "No offices yet.";
+        el.textContent = "No locations yet.";
         return;
     }
     for (const g of groups) {
@@ -19,9 +19,9 @@ function renderGroupsList() {
         const del = document.createElement("button");
         del.type = "button";
         del.textContent = "×";
-        del.title = "Delete office";
+        del.title = "Delete location";
         del.addEventListener("click", async () => {
-            if (!confirm(`Delete office "${g.name}"? Members will be left without an office.`)) return;
+            if (!confirm(`Delete location "${g.name}"? Members will be left without a location.`)) return;
             await fetch(`/api/admin/groups/${g.id}`, { method: "DELETE" });
             await loadGroups();
             await loadUsers();
@@ -35,7 +35,7 @@ function groupSelectFor(user) {
     const select = document.createElement("select");
     const noneOpt = document.createElement("option");
     noneOpt.value = "";
-    noneOpt.textContent = "No office";
+    noneOpt.textContent = "No location";
     select.appendChild(noneOpt);
     for (const g of groups) {
         const opt = document.createElement("option");
