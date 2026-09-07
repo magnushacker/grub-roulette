@@ -6,7 +6,7 @@ from app.config import settings
 from app.database import init_db
 from app.routers import admin, api_groups, api_restaurants, api_users, api_visits, auth, pages
 
-app = FastAPI(title="Lunch Picker")
+app = FastAPI(title="Grub Roulette")
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

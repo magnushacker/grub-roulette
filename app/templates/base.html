@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Lunch Picker{% endblock %}</title>
+    <title>{% block title %}Grub Roulette{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/style.css?v={{ static_version }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <header class="topbar">
-        <a class="brand" href="/">Lunch Picker</a>
+        <a class="brand" href="/">Grub Roulette</a>
         {% if user %}
         <div class="topbar-right">
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>

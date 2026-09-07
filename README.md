@@ -1,4 +1,4 @@
-# Lunch Picker
+# Grub Roulette
 
 A small web app for picking where to go for lunch. Sort nearby restaurants by
 distance from a point you choose on a map, rate places so good ones bubble up,
