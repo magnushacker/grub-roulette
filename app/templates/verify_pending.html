@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Check your email - Grub Roulette{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1>Check your email</h1>
+    <p>We sent a verification link to <strong>{{ email }}</strong>. Click it to activate your account.</p>
+    {% if sender %}
+    <p class="hint">It should arrive within a minute or two, from {{ sender }}. Not there? Check your spam/junk folder.</p>
+    {% else %}
+    <p class="hint">Email sending isn't configured on this server yet — ask whoever runs it to check the server console for your verification link.</p>
+    {% endif %}
+    <form method="post" action="/resend-verification">
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="secondary">Resend verification email</button>
+    </form>
+    <p class="hint">(You can request another one about once a minute.)</p>
+    <p>Already verified? <a href="/login">Log in</a></p>
+</div>
+{% endblock %}

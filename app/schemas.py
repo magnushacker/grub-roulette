@@ -82,6 +82,8 @@ class GroupCreateRequest(BaseModel):
 class AdminUserOut(BaseModel):
     id: int
     display_name: str
+    email: str | None
+    email_verified: bool
     is_admin: bool
     group_id: int | None
     created_at: dt.datetime

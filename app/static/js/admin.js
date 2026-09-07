@@ -66,6 +66,10 @@ async function loadUsers() {
         nameTd.textContent = u.display_name;
         tr.appendChild(nameTd);
 
+        const emailTd = document.createElement("td");
+        emailTd.textContent = u.email ? `${u.email} ${u.email_verified ? "" : "(unverified)"}`.trim() : "—";
+        tr.appendChild(emailTd);
+
         const groupTd = document.createElement("td");
         groupTd.appendChild(groupSelectFor(u));
         tr.appendChild(groupTd);

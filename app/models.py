@@ -31,8 +31,14 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     display_name: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(default=False)
+    # Accounts created before email verification existed have no email on file,
+    # so they're grandfathered in as verified rather than being locked out.
+    email_verified: Mapped[bool] = mapped_column(default=True)
+    verification_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
+    verification_sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
     group_id: Mapped[int | None] = mapped_column(ForeignKey("groups.id"), nullable=True)
     disliked_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
     preferred_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
