@@ -19,6 +19,13 @@ router = APIRouter()
 RESEND_COOLDOWN = dt.timedelta(seconds=60)
 
 
+def _sync_admin_status(user: User, db: Session) -> None:
+    should_be_admin = user.email is not None and user.email.lower() in settings.admin_email_set
+    if should_be_admin and not user.is_admin:
+        user.is_admin = True
+        db.commit()
+
+
 def _issue_and_send_verification(user: User, db: Session) -> None:
     user.verification_token = secrets.token_urlsafe(32)
     user.verification_sent_at = dt.datetime.utcnow()
@@ -56,6 +63,7 @@ def login_submit(request: Request, identifier: str = Form(...), password: str = 
             },
             status_code=403,
         )
+    _sync_admin_status(user, db)
     request.session["user_id"] = user.id
     return RedirectResponse(url="/", status_code=303)
 
@@ -123,6 +131,7 @@ def register_submit(
     db.add(user)
     db.commit()
     db.refresh(user)
+    _sync_admin_status(user, db)
 
     if not settings.require_email_verification:
         request.session["user_id"] = user.id

@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./lunch.db"
     default_radius_m: int = 1500
     exclude_days: int = 7
+    # Comma-separated emails that are auto-promoted to admin on register/login,
+    # so there's a way to get an admin account without one already existing.
+    admin_emails: str = ""
+
+    @property
+    def admin_email_set(self) -> set[str]:
+        return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
 
 
 settings = Settings()
