@@ -1,12 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_admin, get_current_user_optional
 from app.models import Group, User
-from app.schemas import AdminResetPasswordRequest, AdminUserOut, UpdateGroupRequest
+from app.schemas import (
+    AdminResetPasswordRequest,
+    AdminUserOut,
+    GroupOut,
+    RenameGroupRequest,
+    RenameUserRequest,
+    UpdateEmailRequest,
+    UpdateGroupRequest,
+)
 from app.security import hash_password
 from app.templates_env import templates
 
@@ -36,6 +44,46 @@ def delete_user(user_id: int, db: Session = Depends(get_db), admin: User = Depen
         raise HTTPException(status_code=404, detail="User not found")
     db.delete(user)
     db.commit()
+
+
+@router.patch("/api/admin/users/{user_id}/name", response_model=AdminUserOut)
+def rename_user(
+    user_id: int,
+    body: RenameUserRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    existing = db.scalar(
+        select(User).where(func.lower(User.display_name) == body.display_name.lower(), User.id != user_id)
+    )
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="That name is taken")
+    user.display_name = body.display_name
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.patch("/api/admin/users/{user_id}/email", response_model=AdminUserOut)
+def update_user_email(
+    user_id: int,
+    body: UpdateEmailRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    existing = db.scalar(select(User).where(func.lower(User.email) == body.email.lower(), User.id != user_id))
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="That email is already registered")
+    user.email = body.email
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.post("/api/admin/users/{user_id}/reset-password", status_code=204)
@@ -68,6 +116,25 @@ def set_user_group(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.patch("/api/admin/groups/{group_id}", response_model=GroupOut)
+def rename_group(
+    group_id: int,
+    body: RenameGroupRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    group = db.get(Group, group_id)
+    if group is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+    existing = db.scalar(select(Group).where(Group.name == body.name, Group.id != group_id))
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="That location name is taken")
+    group.name = body.name
+    db.commit()
+    db.refresh(group)
+    return group
 
 
 @router.delete("/api/admin/groups/{group_id}", status_code=204)

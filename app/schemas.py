@@ -79,6 +79,10 @@ class GroupCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=128)
 
 
+class RenameGroupRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+
+
 class AdminUserOut(BaseModel):
     id: int
     display_name: str
@@ -93,6 +97,14 @@ class AdminUserOut(BaseModel):
 
 class UpdateGroupRequest(BaseModel):
     group_id: int | None = None
+
+
+class RenameUserRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=128)
+
+
+class UpdateEmailRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=255)
 
 
 class AdminResetPasswordRequest(BaseModel):

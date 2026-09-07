@@ -3,7 +3,7 @@ import secrets
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -100,12 +100,12 @@ def register_submit(
     db: Session = Depends(get_db),
 ):
     groups = db.scalars(select(Group).order_by(Group.name)).all()
-    existing = db.scalar(select(User).where(User.display_name == display_name))
+    existing = db.scalar(select(User).where(func.lower(User.display_name) == display_name.lower()))
     if existing is not None:
         return templates.TemplateResponse(
             "register.html", {"request": request, "error": "That name is taken", "groups": groups}, status_code=400
         )
-    existing_email = db.scalar(select(User).where(User.email == email))
+    existing_email = db.scalar(select(User).where(func.lower(User.email) == email.lower()))
     if existing_email is not None:
         return templates.TemplateResponse(
             "register.html",

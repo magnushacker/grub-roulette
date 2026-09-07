@@ -16,6 +16,27 @@ function renderGroupsList() {
     for (const g of groups) {
         const label = document.createElement("label");
         label.textContent = g.name + " ";
+        const rename = document.createElement("button");
+        rename.type = "button";
+        rename.textContent = "✎";
+        rename.title = "Rename location";
+        rename.addEventListener("click", async () => {
+            const newName = prompt(`New name for "${g.name}":`, g.name);
+            if (!newName || newName === g.name) return;
+            const res = await fetch(`/api/admin/groups/${g.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName }),
+            });
+            if (res.ok) {
+                await loadGroups();
+                await loadUsers();
+            } else {
+                const body = await res.json().catch(() => ({}));
+                alert(body.detail || "Failed to rename location.");
+            }
+        });
+        label.appendChild(rename);
         const del = document.createElement("button");
         del.type = "button";
         del.textContent = "×";
@@ -83,6 +104,48 @@ async function loadUsers() {
         tr.appendChild(joinedTd);
 
         const actionsTd = document.createElement("td");
+
+        const renameBtn = document.createElement("button");
+        renameBtn.type = "button";
+        renameBtn.className = "secondary";
+        renameBtn.textContent = "Rename";
+        renameBtn.addEventListener("click", async () => {
+            const newName = prompt(`New name for ${u.display_name}:`, u.display_name);
+            if (!newName || newName === u.display_name) return;
+            const res = await fetch(`/api/admin/users/${u.id}/name`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ display_name: newName }),
+            });
+            if (res.ok) {
+                await loadUsers();
+            } else {
+                const body = await res.json().catch(() => ({}));
+                alert(body.detail || "Failed to rename user.");
+            }
+        });
+        actionsTd.appendChild(renameBtn);
+
+        const emailBtn = document.createElement("button");
+        emailBtn.type = "button";
+        emailBtn.className = "secondary";
+        emailBtn.textContent = "Change email";
+        emailBtn.addEventListener("click", async () => {
+            const newEmail = prompt(`New email for ${u.display_name}:`, u.email || "");
+            if (!newEmail || newEmail === u.email) return;
+            const res = await fetch(`/api/admin/users/${u.id}/email`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: newEmail }),
+            });
+            if (res.ok) {
+                await loadUsers();
+            } else {
+                const body = await res.json().catch(() => ({}));
+                alert(body.detail || "Failed to update email.");
+            }
+        });
+        actionsTd.appendChild(emailBtn);
 
         const resetBtn = document.createElement("button");
         resetBtn.type = "button";
