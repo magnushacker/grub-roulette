@@ -100,7 +100,10 @@ async function loadUsers() {
         tr.appendChild(adminTd);
 
         const joinedTd = document.createElement("td");
-        joinedTd.textContent = new Date(u.created_at).toLocaleDateString();
+        // created_at is UTC but serialized without a timezone suffix, so tell
+        // the Date constructor explicitly -- otherwise it's parsed as local
+        // time and displays wrong by the browser's UTC offset.
+        joinedTd.textContent = new Date(u.created_at + "Z").toLocaleString();
         tr.appendChild(joinedTd);
 
         const actionsTd = document.createElement("td");
