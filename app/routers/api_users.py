@@ -26,8 +26,12 @@ def get_me(current: User = Depends(get_current_user)):
 
 @router.patch("/me", response_model=UserOut)
 def update_preferences(body: PreferencesRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    # A cuisine in both lists is a state the UI can't produce and the algorithm
+    # can't honour — build_candidates filters disliked before the preferred
+    # bonus applies — so drop the contradiction rather than store it.
+    disliked_lower = {c.lower() for c in body.disliked_cuisines}
     current.disliked_cuisines = body.disliked_cuisines
-    current.preferred_cuisines = body.preferred_cuisines
+    current.preferred_cuisines = [c for c in body.preferred_cuisines if c.lower() not in disliked_lower]
     current.default_companion_ids = body.default_companion_ids
     current.default_lat = body.default_lat
     current.default_lng = body.default_lng

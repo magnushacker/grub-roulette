@@ -17,16 +17,9 @@
         </select>
 
         <h2>3. Your preferences</h2>
-        <div class="cuisine-prefs">
-            <div>
-                <label class="chip-list-label">Cuisines you prefer</label>
-                <div id="preferred-cuisines" class="chip-list">Loading cuisines...</div>
-            </div>
-            <div>
-                <label class="chip-list-label">Cuisines you don't want suggested</label>
-                <div id="disliked-cuisines" class="chip-list">Loading cuisines...</div>
-            </div>
-        </div>
+        <span class="chip-list-label" id="cuisine-prefs-label">Cuisines</span>
+        <p class="hint chip-list-hint">Click to cycle: none &rarr; <span class="chip-legend" data-state="prefer">&#10003; prefer</span> &rarr; <span class="chip-legend" data-state="avoid">&#10007; don't suggest</span> (shift-click reverses).</p>
+        <div id="cuisine-prefs" class="chip-list" role="group" aria-labelledby="cuisine-prefs-label">Loading cuisines...</div>
         <p class="hint">Your location, colleagues, and cuisine picks are saved automatically.</p>
 
         <button id="find-lunch" class="primary">Find lunch</button>

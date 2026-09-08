@@ -170,29 +170,47 @@ document.getElementById("companion-picker").addEventListener("change", (e) => {
     saveState();
 });
 
-function renderCuisineCheckboxes(containerId, cuisines, selected) {
-    const el = document.getElementById(containerId);
-    el.innerHTML = "";
-    if (cuisines.length === 0) {
-        el.textContent = "None yet — run a search to see cuisine options here.";
-        return;
-    }
-    const selectedLower = new Set(selected.map((s) => s.toLowerCase()));
-    for (const c of cuisines) {
-        const label = document.createElement("label");
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.value = c;
-        checkbox.checked = selectedLower.has(c.toLowerCase());
-        checkbox.addEventListener("change", saveState);
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(c.replace(/_/g, " ")));
-        el.appendChild(label);
-    }
+// One chip per cuisine, cycling through three mutually exclusive states, so a
+// cuisine can't be preferred and disliked at once (the algorithm filters
+// disliked before it ever applies the preferred bonus, so "both" did nothing).
+const CUISINE_STATES = ["neutral", "prefer", "avoid"];
+const STATE_MARK = { neutral: "", prefer: "✓", avoid: "✗" };
+const STATE_DESCRIPTION = { neutral: "no preference", prefer: "preferred", avoid: "don't suggest" };
+let cuisineStates = new Map(); // lowercase cuisine -> one of CUISINE_STATES
+
+function cuisineState(cuisine) {
+    return cuisineStates.get(cuisine.toLowerCase()) || "neutral";
 }
 
-function checkedValues(containerId) {
-    return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map((c) => c.value);
+function paintCuisineChip(btn, cuisine) {
+    const state = cuisineState(cuisine);
+    const label = cuisine.replace(/_/g, " ");
+    btn.dataset.state = state;
+    btn.textContent = "";
+    if (STATE_MARK[state]) {
+        const mark = document.createElement("span");
+        mark.className = "chip-mark";
+        mark.setAttribute("aria-hidden", "true");
+        mark.textContent = STATE_MARK[state];
+        btn.appendChild(mark);
+    }
+    btn.appendChild(document.createTextNode(label));
+    btn.setAttribute("aria-label", `${label}: ${STATE_DESCRIPTION[state]}`);
+}
+
+function cuisineChip(cuisine) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip";
+    btn.addEventListener("click", (e) => {
+        const step = e.shiftKey ? -1 : 1;
+        const next = (CUISINE_STATES.indexOf(cuisineState(cuisine)) + step + CUISINE_STATES.length) % CUISINE_STATES.length;
+        cuisineStates.set(cuisine.toLowerCase(), CUISINE_STATES[next]);
+        paintCuisineChip(btn, cuisine);
+        saveState();
+    });
+    paintCuisineChip(btn, cuisine);
+    return btn;
 }
 
 // Grows as search results come in, rather than listing every cuisine ever cached.
@@ -208,12 +226,23 @@ function addToCuisineUniverse(cuisines) {
     return changed;
 }
 
-function refreshCuisineCheckboxes() {
+// Chip state lives in `cuisineStates`, not the DOM, so re-rendering after a
+// search widens the universe keeps every existing pick.
+function refreshCuisineChips() {
+    const el = document.getElementById("cuisine-prefs");
+    el.textContent = "";
     const cuisines = Array.from(cuisineUniverse.values()).sort((a, b) => a.localeCompare(b));
-    const preferredSelected = checkedValues("preferred-cuisines");
-    const dislikedSelected = checkedValues("disliked-cuisines");
-    renderCuisineCheckboxes("preferred-cuisines", cuisines, preferredSelected);
-    renderCuisineCheckboxes("disliked-cuisines", cuisines, dislikedSelected);
+    if (cuisines.length === 0) {
+        el.textContent = "None yet — run a search to see cuisine options here.";
+        return;
+    }
+    for (const c of cuisines) el.appendChild(cuisineChip(c));
+}
+
+function cuisinesInState(state) {
+    return Array.from(cuisineStates.entries())
+        .filter(([, s]) => s === state)
+        .map(([key]) => cuisineUniverse.get(key) || key);
 }
 
 async function loadPreferences() {
@@ -221,12 +250,12 @@ async function loadPreferences() {
     me = await meRes.json();
     addToCuisineUniverse(me.preferred_cuisines);
     addToCuisineUniverse(me.disliked_cuisines);
-    // Seed straight from `me`, not refreshCuisineCheckboxes()'s DOM-reading logic —
-    // the checkbox containers are still empty at this point (nothing to read yet),
-    // so that path would silently render everything unchecked.
-    const cuisines = Array.from(cuisineUniverse.values()).sort((a, b) => a.localeCompare(b));
-    renderCuisineCheckboxes("preferred-cuisines", cuisines, me.preferred_cuisines);
-    renderCuisineCheckboxes("disliked-cuisines", cuisines, me.disliked_cuisines);
+    cuisineStates = new Map();
+    // Avoid last, so a legacy account with a cuisine saved in both lists lands
+    // on the state the algorithm actually honours.
+    for (const c of me.preferred_cuisines) cuisineStates.set(c.toLowerCase(), "prefer");
+    for (const c of me.disliked_cuisines) cuisineStates.set(c.toLowerCase(), "avoid");
+    refreshCuisineChips();
 }
 
 async function saveState() {
@@ -234,8 +263,8 @@ async function saveState() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            preferred_cuisines: checkedValues("preferred-cuisines"),
-            disliked_cuisines: checkedValues("disliked-cuisines"),
+            preferred_cuisines: cuisinesInState("prefer"),
+            disliked_cuisines: cuisinesInState("avoid"),
             default_companion_ids: selectedCompanionIds,
             default_lat: origin ? origin.lat : null,
             default_lng: origin ? origin.lng : null,
@@ -418,7 +447,7 @@ async function findLunch() {
 
     const foundCuisines = [...(data.pick ? data.pick.cuisines : []), ...data.alternatives.flatMap((a) => a.cuisines)];
     if (addToCuisineUniverse(foundCuisines)) {
-        refreshCuisineCheckboxes();
+        refreshCuisineChips();
     }
 }
 
