@@ -308,9 +308,10 @@ function renderRestaurantCard(r, container) {
         card.remove();
     });
 
-    const confirmSection = card.querySelector(".visit-confirm");
+    const visitActionEl = card.querySelector(".r-visit-action");
     const markConfirmed = (name) => {
-        confirmSection.innerHTML = `<p class="confirmed">Logged: lunch at ${name}</p>`;
+        visitActionEl.innerHTML = `<span class="confirmed">Logged: ${name}</span>`;
+        elsewhereBox.hidden = true;
     };
 
     card.querySelector(".btn-went-here").addEventListener("click", async () => {

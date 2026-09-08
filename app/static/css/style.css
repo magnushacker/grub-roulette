@@ -226,8 +226,8 @@ button.secondary {
 .restaurant-card {
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
     cursor: pointer;
     transition: box-shadow 0.15s, border-color 0.15s;
 }
@@ -237,28 +237,67 @@ button.secondary {
     box-shadow: 0 0 0 2px var(--accent);
 }
 
-.r-name { margin: 0 0 4px 0; }
-.r-address { color: var(--muted); margin: 0 0 4px 0; }
-.r-meta { font-size: 0.9rem; margin: 0 0 8px 0; }
+.r-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.r-title { min-width: 0; }
+
+.r-name { margin: 0; font-size: 1rem; }
+.r-address {
+    color: var(--muted);
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.r-visit-action { flex-shrink: 0; }
+
+.btn-went-here {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.r-meta { font-size: 0.85rem; margin: 6px 0 0 0; color: var(--muted); }
 
 .r-cuisines {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-bottom: 8px;
+    margin: 6px 0 0 0;
 }
 
 .r-cuisines span {
     background: var(--bg);
     border-radius: 999px;
     padding: 2px 8px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+}
+
+.r-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
 }
 
 .star-picker {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     color: #ccc;
-    margin-bottom: 8px;
 }
 
 .star-picker span { cursor: pointer; }
@@ -266,18 +305,23 @@ button.secondary {
 
 .r-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    margin-bottom: 12px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
 }
 
-.visit-confirm {
-    border-top: 1px solid var(--border);
-    padding-top: 12px;
+.r-actions a { font-size: 0.85rem; }
+
+.btn-went-elsewhere, .btn-blacklist {
+    background: none;
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
 }
 
-.visit-confirm p { margin: 0 0 8px 0; font-size: 0.9rem; }
-.visit-confirm button { margin-right: 8px; margin-bottom: 8px; }
+.elsewhere-search { margin-top: 8px; }
 
 .elsewhere-results {
     display: flex;
@@ -297,6 +341,7 @@ button.secondary {
 .confirmed {
     color: #15803d;
     font-weight: 600;
+    font-size: 0.85rem;
 }
 
 .admin-table {

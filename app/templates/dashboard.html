@@ -40,25 +40,30 @@
 
 <template id="restaurant-card-template">
     <div class="restaurant-card">
-        <h3 class="r-name"></h3>
-        <p class="r-address"></p>
+        <div class="r-header">
+            <div class="r-title">
+                <h3 class="r-name"></h3>
+                <p class="r-address"></p>
+            </div>
+            <div class="r-visit-action">
+                <button class="btn-went-here">I went here</button>
+            </div>
+        </div>
         <p class="r-meta"></p>
         <div class="r-cuisines"></div>
-        <div class="star-picker" data-stars="0">
-            <span data-star="1">&#9733;</span><span data-star="2">&#9733;</span><span data-star="3">&#9733;</span><span data-star="4">&#9733;</span><span data-star="5">&#9733;</span>
-        </div>
-        <div class="r-actions">
-            <button class="btn-blacklist">Blacklist</button>
-            <a class="r-maps-link" href="#" target="_blank" rel="noopener">Open in Google Maps</a>
-        </div>
-        <div class="visit-confirm">
-            <p>Did you actually go here today?</p>
-            <button class="btn-went-here">Yes, I went here</button>
-            <button class="btn-went-elsewhere">No, I went somewhere else</button>
-            <div class="elsewhere-search" hidden>
-                <input type="text" class="elsewhere-input" placeholder="Search restaurant name...">
-                <div class="elsewhere-results"></div>
+        <div class="r-footer">
+            <div class="star-picker" data-stars="0">
+                <span data-star="1">&#9733;</span><span data-star="2">&#9733;</span><span data-star="3">&#9733;</span><span data-star="4">&#9733;</span><span data-star="5">&#9733;</span>
             </div>
+            <div class="r-actions">
+                <a class="r-maps-link" href="#" target="_blank" rel="noopener">Maps</a>
+                <button class="btn-went-elsewhere">Went elsewhere</button>
+                <button class="btn-blacklist">Blacklist</button>
+            </div>
+        </div>
+        <div class="elsewhere-search" hidden>
+            <input type="text" class="elsewhere-input" placeholder="Search restaurant name...">
+            <div class="elsewhere-results"></div>
         </div>
     </div>
 </template>
