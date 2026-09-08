@@ -6,6 +6,7 @@ let restaurantMarkers = new Map(); // restaurant id -> google.maps.Marker
 let infoWindow = null;
 let highlightedCard = null;
 let cuisineUniverse = new Map(); // lowercase cuisine -> display-cased value
+let usersById = new Map(); // id -> user, for reading companions' own cuisine picks
 
 function initMap() {
     const hasDefault = me && me.default_lat != null;
@@ -105,6 +106,7 @@ function addCompanionCheckbox(u, checked) {
     checkbox.checked = checked;
     checkbox.addEventListener("change", () => {
         selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
+        refreshCuisineChips();
         saveState();
     });
     label.appendChild(checkbox);
@@ -118,6 +120,7 @@ async function loadCompanions() {
     const [usersRes, groupsRes] = await Promise.all([fetch("/api/users"), fetch("/api/groups")]);
     const users = await usersRes.json();
     const groups = await groupsRes.json();
+    usersById = new Map(users.map((u) => [u.id, u]));
     if (users.length === 0) {
         el.textContent = "No colleagues registered yet.";
         picker.hidden = true;
@@ -152,6 +155,7 @@ async function loadCompanions() {
         picker.appendChild(opt);
     }
     picker.hidden = pickableCompanions.size === 0;
+    refreshCuisineChips();
 }
 
 document.getElementById("companion-picker").addEventListener("change", (e) => {
@@ -167,6 +171,7 @@ document.getElementById("companion-picker").addEventListener("change", (e) => {
     e.target.value = "";
     e.target.hidden = pickableCompanions.size === 0;
     selectedCompanionIds = Array.from(document.querySelectorAll("#companions input:checked")).map((c) => parseInt(c.value, 10));
+    refreshCuisineChips();
     saveState();
 });
 
@@ -182,10 +187,35 @@ function cuisineState(cuisine) {
     return cuisineStates.get(cuisine.toLowerCase()) || "neutral";
 }
 
+// What the currently selected companions think of a cuisine, from their own
+// saved preferences (never written to by this page -- read-only). A dislike
+// from any companion wins over a preference from another, matching how the
+// suggestion algorithm itself treats dislikes as a hard filter that overrides
+// anyone's preference bonus.
+function companionState(cuisine) {
+    const key = cuisine.toLowerCase();
+    let prefer = false;
+    for (const id of selectedCompanionIds) {
+        const u = usersById.get(id);
+        if (!u) continue;
+        if ((u.disliked_cuisines || []).some((c) => c.toLowerCase() === key)) return "avoid";
+        if ((u.preferred_cuisines || []).some((c) => c.toLowerCase() === key)) prefer = true;
+    }
+    return prefer ? "prefer" : "neutral";
+}
+
 function paintCuisineChip(btn, cuisine) {
-    const state = cuisineState(cuisine);
+    const mine = cuisineState(cuisine);
+    // Only fall back to the group's combined pick when I haven't stated an
+    // opinion myself -- my own explicit pick always wins and looks editable;
+    // a companion-only pick is shown but visually muted, since clicking it
+    // only ever sets *my* pick, never theirs.
+    const fromCompanion = mine === "neutral" ? companionState(cuisine) : "neutral";
+    const state = mine !== "neutral" ? mine : fromCompanion;
+    const source = mine !== "neutral" ? "mine" : fromCompanion !== "neutral" ? "companion" : "neutral";
     const label = cuisine.replace(/_/g, " ");
     btn.dataset.state = state;
+    btn.dataset.source = source;
     btn.textContent = "";
     if (STATE_MARK[state]) {
         const mark = document.createElement("span");
@@ -195,7 +225,8 @@ function paintCuisineChip(btn, cuisine) {
         btn.appendChild(mark);
     }
     btn.appendChild(document.createTextNode(label));
-    btn.setAttribute("aria-label", `${label}: ${STATE_DESCRIPTION[state]}`);
+    const sourceNote = source === "companion" ? " (set by a colleague you've added, not you)" : "";
+    btn.setAttribute("aria-label", `${label}: ${STATE_DESCRIPTION[state]}${sourceNote}`);
 }
 
 function cuisineChip(cuisine) {
