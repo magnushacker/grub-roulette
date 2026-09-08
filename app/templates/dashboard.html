@@ -3,22 +3,20 @@
 {% block content %}
 <div class="layout">
     <section class="panel">
-        <h2>1. Pick your starting point</h2>
+        <h2>Pick your starting point</h2>
         <p class="hint">Click the map to drop a pin, or search an address.</p>
         <div id="map"></div>
         <label>Search radius: <span id="radius-value">{{ default_radius_m }}</span> m
             <input type="range" id="radius" min="300" max="2000" step="50" value="{{ default_radius_m }}">
         </label>
 
-        <h2>2. Who's joining?</h2>
+        <h2>Who's joining?</h2>
         <div id="companions" class="companions-list">Loading colleagues...</div>
         <select id="companion-picker">
             <option value="">Add a colleague from another location...</option>
         </select>
 
-        <h2>3. Your preferences</h2>
-        <span class="chip-list-label" id="cuisine-prefs-label">Cuisines</span>
-        <p class="hint chip-list-hint">Click to cycle: none &rarr; <span class="chip-legend" data-state="prefer">&#10003; prefer</span> &rarr; <span class="chip-legend" data-state="avoid">&#10007; don't suggest</span> (shift-click reverses).</p>
+        <h2>Your preferences</h2>
         <div id="cuisine-prefs" class="chip-list" role="group" aria-labelledby="cuisine-prefs-label">Loading cuisines...</div>
         <p class="hint">Your location, colleagues, and cuisine picks are saved automatically.</p>
 
