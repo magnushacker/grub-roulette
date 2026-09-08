@@ -439,8 +439,6 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     max-height: 132px;
     overflow-y: auto;
     padding: 6px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
 }
 
 /* Three states on one chip rather than one checkbox per cuisine per list:
