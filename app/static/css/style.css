@@ -472,22 +472,6 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     text-decoration: line-through;
 }
 
-/* A pick that's not mine, only visible because a colleague I've added has
-   it set -- still clickable (that sets *my* pick, never theirs), but muted
-   so it reads as "not yours" rather than as your own choice. Placed after
-   the prefer/avoid rules above so it wins the color/background/border on
-   the shared specificity. */
-.chip[data-source="companion"] {
-    background: var(--bg);
-    border-color: var(--border);
-    border-style: dashed;
-    color: var(--muted);
-}
-
-.chip[data-source="companion"] .chip-mark {
-    color: var(--muted);
-}
-
 .chip-mark {
     font-weight: 700;
 }

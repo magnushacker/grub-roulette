@@ -4,10 +4,15 @@ const accountNewGroup = document.getElementById("account-new-group");
 const accountNewGroupName = document.getElementById("account-new-group-name");
 const accountStatus = document.getElementById("account-modal-status");
 
+// Populated fresh each time the modal opens, and reused when saving cuisine
+// picks so that PATCH -- which replaces every preference field at once --
+// doesn't clobber default_companion_ids/default_lat/lng/radius with defaults.
+let accountMe = null;
+
 async function populateAccountGroupSelect() {
     const [groupsRes, meRes] = await Promise.all([fetch("/api/groups"), fetch("/api/users/me")]);
     const groups = await groupsRes.json();
-    const me = await meRes.json();
+    accountMe = await meRes.json();
 
     accountGroupSelect.innerHTML = "";
     const noneOpt = document.createElement("option");
@@ -18,7 +23,7 @@ async function populateAccountGroupSelect() {
         const opt = document.createElement("option");
         opt.value = g.id;
         opt.textContent = g.name;
-        if (me.group_id === g.id) opt.selected = true;
+        if (accountMe.group_id === g.id) opt.selected = true;
         accountGroupSelect.appendChild(opt);
     }
     const newOpt = document.createElement("option");
@@ -29,6 +34,72 @@ async function populateAccountGroupSelect() {
     accountNewGroup.hidden = true;
     accountNewGroupName.value = "";
     accountStatus.textContent = "";
+}
+
+// --- Cuisine preferences: every cuisine ever seen while searching, not just
+// what happens to be in the dashboard's current-session in-memory list.
+let accountCuisineStates = new Map(); // lowercase cuisine -> one of CUISINE_STATES
+let accountCuisineUniverse = new Map(); // lowercase cuisine -> display-cased value
+
+function accountCuisineState(cuisine) {
+    return accountCuisineStates.get(cuisine.toLowerCase()) || "neutral";
+}
+
+function accountCuisinesInState(state) {
+    return Array.from(accountCuisineStates.entries())
+        .filter(([, s]) => s === state)
+        .map(([key]) => accountCuisineUniverse.get(key) || key);
+}
+
+async function saveAccountCuisines() {
+    await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            preferred_cuisines: accountCuisinesInState("prefer"),
+            disliked_cuisines: accountCuisinesInState("avoid"),
+            default_companion_ids: accountMe.default_companion_ids,
+            default_lat: accountMe.default_lat,
+            default_lng: accountMe.default_lng,
+            default_radius_m: accountMe.default_radius_m,
+        }),
+    });
+}
+
+function loadAccountCuisines() {
+    const el = document.getElementById("account-cuisine-prefs");
+    accountCuisineUniverse = new Map();
+    accountCuisineStates = new Map();
+    for (const c of accountMe.seen_cuisines || []) accountCuisineUniverse.set(c.toLowerCase(), c);
+    // A pick can predate seen_cuisines existing, or the algorithm having ever
+    // resurfaced it since -- keep it listed either way.
+    for (const c of accountMe.preferred_cuisines || []) {
+        accountCuisineUniverse.set(c.toLowerCase(), c);
+        accountCuisineStates.set(c.toLowerCase(), "prefer");
+    }
+    for (const c of accountMe.disliked_cuisines || []) {
+        accountCuisineUniverse.set(c.toLowerCase(), c);
+        accountCuisineStates.set(c.toLowerCase(), "avoid");
+    }
+
+    el.textContent = "";
+    const cuisines = Array.from(accountCuisineUniverse.values()).sort((a, b) => a.localeCompare(b));
+    if (cuisines.length === 0) {
+        el.textContent = "None yet — cuisines you come across while searching for lunch will show up here.";
+        return;
+    }
+    for (const c of cuisines) {
+        el.appendChild(
+            makeCuisineChip(c, {
+                getState: accountCuisineState,
+                displayState: accountCuisineState,
+                setState: (cuisine, state) => {
+                    accountCuisineStates.set(cuisine.toLowerCase(), state);
+                    saveAccountCuisines();
+                },
+            })
+        );
+    }
 }
 
 accountGroupSelect.addEventListener("change", () => {
@@ -189,6 +260,7 @@ accountRestaurantSearch.addEventListener("input", () => {
 
 document.getElementById("open-account-modal").addEventListener("click", async () => {
     await populateAccountGroupSelect();
+    loadAccountCuisines();
     accountRestaurantSearch.value = "";
     accountRestaurantResults.innerHTML = "";
     loadAccountBlacklist();

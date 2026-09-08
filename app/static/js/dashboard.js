@@ -175,23 +175,24 @@ document.getElementById("companion-picker").addEventListener("change", (e) => {
     saveState();
 });
 
-// One chip per cuisine, cycling through three mutually exclusive states, so a
-// cuisine can't be preferred and disliked at once (the algorithm filters
-// disliked before it ever applies the preferred bonus, so "both" did nothing).
-const CUISINE_STATES = ["neutral", "prefer", "avoid"];
-const STATE_MARK = { neutral: "", prefer: "✓", avoid: "✗" };
-const STATE_DESCRIPTION = { neutral: "no preference", prefer: "preferred", avoid: "don't suggest" };
-let cuisineStates = new Map(); // lowercase cuisine -> one of CUISINE_STATES
+// Cuisine chips cycle through three mutually exclusive states (see
+// cuisine-chips.js), so a cuisine can't be preferred and disliked at once
+// (the algorithm filters disliked before it ever applies the preferred
+// bonus, so "both" did nothing).
+let cuisineStates = new Map(); // lowercase cuisine -> one of CUISINE_STATES, mine only
 
 function cuisineState(cuisine) {
     return cuisineStates.get(cuisine.toLowerCase()) || "neutral";
 }
 
 // What the currently selected companions think of a cuisine, from their own
-// saved preferences (never written to by this page -- read-only). A dislike
-// from any companion wins over a preference from another, matching how the
-// suggestion algorithm itself treats dislikes as a hard filter that overrides
-// anyone's preference bonus.
+// saved preferences (read-only -- this page never writes to a companion's
+// account). A dislike from any companion wins over a preference from
+// another, matching how the suggestion algorithm treats dislikes as a hard
+// filter that overrides anyone's preference bonus. This only ever supplies
+// the *default* shown for a cuisine you haven't picked yourself -- once you
+// click a chip it's purely yours from then on, cycling the same three
+// states as before regardless of that default.
 function companionState(cuisine) {
     const key = cuisine.toLowerCase();
     let prefer = false;
@@ -204,44 +205,9 @@ function companionState(cuisine) {
     return prefer ? "prefer" : "neutral";
 }
 
-function paintCuisineChip(btn, cuisine) {
+function effectiveCuisineState(cuisine) {
     const mine = cuisineState(cuisine);
-    // Only fall back to the group's combined pick when I haven't stated an
-    // opinion myself -- my own explicit pick always wins and looks editable;
-    // a companion-only pick is shown but visually muted, since clicking it
-    // only ever sets *my* pick, never theirs.
-    const fromCompanion = mine === "neutral" ? companionState(cuisine) : "neutral";
-    const state = mine !== "neutral" ? mine : fromCompanion;
-    const source = mine !== "neutral" ? "mine" : fromCompanion !== "neutral" ? "companion" : "neutral";
-    const label = cuisine.replace(/_/g, " ");
-    btn.dataset.state = state;
-    btn.dataset.source = source;
-    btn.textContent = "";
-    if (STATE_MARK[state]) {
-        const mark = document.createElement("span");
-        mark.className = "chip-mark";
-        mark.setAttribute("aria-hidden", "true");
-        mark.textContent = STATE_MARK[state];
-        btn.appendChild(mark);
-    }
-    btn.appendChild(document.createTextNode(label));
-    const sourceNote = source === "companion" ? " (set by a colleague you've added, not you)" : "";
-    btn.setAttribute("aria-label", `${label}: ${STATE_DESCRIPTION[state]}${sourceNote}`);
-}
-
-function cuisineChip(cuisine) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip";
-    btn.addEventListener("click", (e) => {
-        const step = e.shiftKey ? -1 : 1;
-        const next = (CUISINE_STATES.indexOf(cuisineState(cuisine)) + step + CUISINE_STATES.length) % CUISINE_STATES.length;
-        cuisineStates.set(cuisine.toLowerCase(), CUISINE_STATES[next]);
-        paintCuisineChip(btn, cuisine);
-        saveState();
-    });
-    paintCuisineChip(btn, cuisine);
-    return btn;
+    return mine !== "neutral" ? mine : companionState(cuisine);
 }
 
 // Grows as search results come in, rather than listing every cuisine ever cached.
@@ -267,7 +233,18 @@ function refreshCuisineChips() {
         el.textContent = "None yet — run a search to see cuisine options here.";
         return;
     }
-    for (const c of cuisines) el.appendChild(cuisineChip(c));
+    for (const c of cuisines) {
+        el.appendChild(
+            makeCuisineChip(c, {
+                getState: cuisineState,
+                displayState: effectiveCuisineState,
+                setState: (cuisine, state) => {
+                    cuisineStates.set(cuisine.toLowerCase(), state);
+                    saveState();
+                },
+            })
+        );
+    }
 }
 
 function cuisinesInState(state) {

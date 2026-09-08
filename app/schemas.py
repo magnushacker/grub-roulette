@@ -60,6 +60,7 @@ class UserOut(BaseModel):
     group_id: int | None
     disliked_cuisines: list[str]
     preferred_cuisines: list[str]
+    seen_cuisines: list[str]
     default_companion_ids: list[int]
     default_lat: float | None
     default_lng: float | None
