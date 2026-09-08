@@ -6,6 +6,11 @@
 #   2. Add an ANTHROPIC_API_KEY secret (Settings -> Secrets and variables ->
 #      Actions -> New repository secret) with a key from
 #      https://console.anthropic.com/settings/keys
+#
+# This repo is public, so anyone can comment "@claude" on an issue/PR --
+# without the actor check below, that would run Claude with write access to
+# this repo and billed API usage, triggered by anyone at all. Only
+# magnushacker is allowed to trigger it; update ALLOWED_ACTOR if that changes.
 name: Claude Code
 
 on:
@@ -21,10 +26,12 @@ on:
 jobs:
   claude-code-action:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      github.actor == 'magnushacker' && (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
