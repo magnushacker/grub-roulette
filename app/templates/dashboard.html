@@ -3,6 +3,10 @@
 {% block content %}
 <div class="layout">
     <section class="panel">
+        <div class="find-lunch-bar">
+            <button id="find-lunch" class="primary">Find lunch</button>
+        </div>
+
         <h2>1. Pick your starting point</h2>
         <p class="hint">Click the map to drop a pin, or search an address.</p>
         <div id="map"></div>
@@ -23,8 +27,6 @@
         <label>Cuisines you don't want suggested</label>
         <div id="disliked-cuisines" class="chip-list">Loading cuisines...</div>
         <p class="hint">Your location, colleagues, and cuisine picks are saved automatically.</p>
-
-        <button id="find-lunch" class="primary">Find lunch</button>
     </section>
 
     <section class="panel">
