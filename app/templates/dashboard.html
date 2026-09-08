@@ -4,7 +4,6 @@
 <div class="layout">
     <section class="panel">
         <h2>Pick your starting point</h2>
-        <p class="hint">Click the map to drop a pin, or search an address.</p>
         <div id="map"></div>
         <label>Search radius: <span id="radius-value">{{ default_radius_m }}</span> m
             <input type="range" id="radius" min="300" max="2000" step="50" value="{{ default_radius_m }}">
@@ -18,7 +17,6 @@
 
         <h2>Your preferences</h2>
         <div id="cuisine-prefs" class="chip-list" role="group" aria-labelledby="cuisine-prefs-label">Loading cuisines...</div>
-        <p class="hint">Your location, colleagues, and cuisine picks are saved automatically.</p>
 
         <button id="find-lunch" class="primary">Find lunch</button>
     </section>
