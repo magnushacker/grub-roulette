@@ -430,37 +430,52 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     padding: 10px 16px;
 }
 
-/* Deliberately dense: both lists sit above the "Find lunch" button, so every
+/* Deliberately dense: the list sits above the "Find lunch" button, so every
    pixel here is a pixel the button moves down the page. */
 .chip-list {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    max-height: 104px;
+    max-height: 132px;
     overflow-y: auto;
     padding: 6px;
     border: 1px solid var(--border);
     border-radius: 6px;
 }
 
-.chip-list label {
-    display: flex;
+/* Three states on one chip rather than one checkbox per cuisine per list:
+   half the chips, and "prefer" and "don't suggest" can't contradict. */
+.chip {
+    display: inline-flex;
     align-items: center;
     gap: 3px;
+    margin: 0;
     background: var(--bg);
+    color: var(--text);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 1px 8px 1px 5px;
+    padding: 1px 8px;
+    font: inherit;
     font-size: 0.78rem;
     line-height: 1.5;
     white-space: nowrap;
 }
 
-.chip-list label input[type="checkbox"] {
-    width: 12px;
-    height: 12px;
-    margin: 0;
-    accent-color: var(--accent);
+.chip[data-state="prefer"], .chip-legend[data-state="prefer"] {
+    background: #dcfce7;
+    border-color: #16a34a;
+    color: #14532d;
+}
+
+.chip[data-state="avoid"], .chip-legend[data-state="avoid"] {
+    background: #fee2e2;
+    border-color: #dc2626;
+    color: #7f1d1d;
+    text-decoration: line-through;
+}
+
+.chip-mark {
+    font-weight: 700;
 }
 
 .chip-list-label {
@@ -469,12 +484,15 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     margin-bottom: 4px;
 }
 
-/* Side by side when there's room, stacked when there isn't — two full-width
-   lists stacked is what pushed "Find lunch" off the bottom of the panel. */
-.cuisine-prefs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 10px 12px;
+.chip-list-hint {
+    margin: 0 0 4px 0;
+}
+
+.chip-legend {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0 6px;
+    white-space: nowrap;
 }
 
 .scroll-list {
