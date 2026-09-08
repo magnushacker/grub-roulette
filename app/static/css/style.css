@@ -182,27 +182,6 @@ input[type="range"]::-moz-range-track {
 
 .panel h2 { margin-top: 20px; font-size: 1rem; }
 .panel h2:first-child { margin-top: 0; }
-.find-lunch-bar + h2 { margin-top: 0; }
-
-/* Keeps the primary action pinned to the top of the (scrollable) left panel,
-   so it stays reachable no matter how long the cuisine lists get. */
-.find-lunch-bar {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--panel-bg);
-    /* Bleed into the panel's 20px padding so nothing scrolls past its edges. */
-    margin: -20px -20px 0;
-    padding: 20px 20px 12px;
-    border-radius: 8px 8px 0 0;
-}
-
-.find-lunch-bar button.primary { margin-top: 0; }
-
-@media (max-width: 800px) {
-    /* Panel scrolls with the page here, so pin below the fixed topbar instead. */
-    .find-lunch-bar { top: 51px; }
-}
 
 #map {
     height: 380px;
@@ -451,13 +430,15 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     padding: 10px 16px;
 }
 
+/* Deliberately dense: both lists sit above the "Find lunch" button, so every
+   pixel here is a pixel the button moves down the page. */
 .chip-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    max-height: 160px;
+    gap: 4px;
+    max-height: 104px;
     overflow-y: auto;
-    padding: 8px;
+    padding: 6px;
     border: 1px solid var(--border);
     border-radius: 6px;
 }
@@ -465,12 +446,35 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
 .chip-list label {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 4px 10px;
+    padding: 1px 8px 1px 5px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.chip-list label input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.chip-list-label {
+    display: block;
     font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+/* Side by side when there's room, stacked when there isn't — two full-width
+   lists stacked is what pushed "Find lunch" off the bottom of the panel. */
+.cuisine-prefs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px 12px;
 }
 
 .scroll-list {
