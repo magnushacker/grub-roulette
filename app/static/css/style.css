@@ -184,7 +184,9 @@ input[type="range"]::-moz-range-track {
 .panel h2:first-child { margin-top: 0; }
 
 #map {
-    height: 380px;
+    /* Sized so the whole panel, "Find lunch" included, fits a 900px-tall
+       viewport without scrolling the panel. */
+    height: 300px;
     border-radius: 6px;
     margin-bottom: 8px;
     overflow: hidden;
@@ -436,7 +438,9 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    max-height: 104px;
+    /* Exactly three chip rows (3x23px + 2x4px gap + 2x6px padding) so a
+       partially-clipped fourth row never peeks out of the bottom edge. */
+    max-height: 89px;
     overflow-y: auto;
     padding: 6px;
     border: 1px solid var(--border);
@@ -473,7 +477,7 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
    lists stacked is what pushed "Find lunch" off the bottom of the panel. */
 .cuisine-prefs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 10px 12px;
 }
 
