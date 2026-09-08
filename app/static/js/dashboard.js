@@ -345,6 +345,7 @@ function renderRestaurantCard(r, container) {
             if (origin) {
                 params.set("lat", origin.lat);
                 params.set("lng", origin.lng);
+                params.set("radius_m", document.getElementById("radius").value);
             }
             const res = await fetch(`/api/restaurants/search?${params}`);
             const found = await res.json();

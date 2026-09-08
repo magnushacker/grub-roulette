@@ -157,13 +157,15 @@ def nearby_restaurants(lat: float, lng: float, radius_m: int) -> list[dict]:
     return list(results.values())
 
 
-def text_search_restaurants(query: str, lat: float | None = None, lng: float | None = None) -> list[dict]:
+def text_search_restaurants(
+    query: str, lat: float | None = None, lng: float | None = None, radius_m: int | None = None
+) -> list[dict]:
     if not settings.google_places_api_key or not query.strip():
         return []
 
     body: dict = {"textQuery": f"{query} restaurant"}
     if lat is not None and lng is not None:
-        body["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": 20000}}
+        body["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": min(radius_m or 20000, 50000)}}
 
     with httpx.Client(timeout=10.0) as client:
         resp = client.post(TEXT_SEARCH_URL, json=body, headers=_headers())
