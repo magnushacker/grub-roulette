@@ -144,6 +144,21 @@ def search_and_cache_restaurants(db: Session, lat: float, lng: float, radius_m: 
     return restaurants
 
 
+def record_seen_cuisines(user: User, restaurants: list[Restaurant]) -> None:
+    """Grow the user's all-time "cuisines I've encountered while searching"
+    list, case-insensitively deduped against what's already there."""
+    seen = {c.lower(): c for c in user.seen_cuisines}
+    changed = False
+    for restaurant in restaurants:
+        for cuisine in restaurant.cuisines or []:
+            key = cuisine.lower()
+            if key not in seen:
+                seen[key] = cuisine
+                changed = True
+    if changed:
+        user.seen_cuisines = list(seen.values())
+
+
 def _external_rating(restaurant: Restaurant) -> float:
     ratings = [r for r in (restaurant.google_rating, restaurant.yelp_rating) if r is not None]
     return sum(ratings) / len(ratings) if ratings else 3.0

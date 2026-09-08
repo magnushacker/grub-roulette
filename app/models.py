@@ -42,6 +42,10 @@ class User(Base):
     group_id: Mapped[int | None] = mapped_column(ForeignKey("groups.id"), nullable=True)
     disliked_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
     preferred_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Every cuisine this user has ever had turn up in a nearby/text search
+    # result, so the settings page can offer more than whatever happens to
+    # be in the current page session's in-memory list.
+    seen_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
     default_companion_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
     default_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_lng: Mapped[float | None] = mapped_column(Float, nullable=True)

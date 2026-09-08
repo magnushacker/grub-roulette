@@ -81,6 +81,10 @@
                 <button type="button" id="account-create-group" class="secondary">Create location</button>
             </div>
 
+            <h3>Cuisine preferences</h3>
+            <p class="hint">Every cuisine you've ever come across while searching. Tap to cycle: no preference &rarr; &#10003; prefer &rarr; &#10007; don't suggest.</p>
+            <div id="account-cuisine-prefs" class="chip-list" role="group">Loading...</div>
+
             <h3>Your blacklist</h3>
             <div id="account-blacklist" class="scroll-list">Loading...</div>
 
@@ -98,6 +102,7 @@
                 <button type="button" id="account-cancel" class="secondary">Close</button>
             </div>
         </dialog>
+        <script src="/static/js/cuisine-chips.js?v={{ static_version }}"></script>
         <script src="/static/js/account.js?v={{ static_version }}"></script>
         {% endif %}
     </header>

@@ -8,7 +8,13 @@ from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, User
 from app.schemas import RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services import google_places
-from app.services.recommend import build_candidates, haversine_m, pick_suggestion, search_and_cache_restaurants
+from app.services.recommend import (
+    build_candidates,
+    haversine_m,
+    pick_suggestion,
+    record_seen_cuisines,
+    search_and_cache_restaurants,
+)
 
 router = APIRouter(prefix="/api/restaurants", tags=["restaurants"])
 
@@ -29,6 +35,8 @@ def suggest(body: SuggestRequest, db: Session = Depends(get_db), current: User =
         companions = list(db.scalars(select(User).where(User.id.in_(body.companion_ids))))
 
     restaurants = search_and_cache_restaurants(db, body.lat, body.lng, body.radius_m)
+    record_seen_cuisines(current, restaurants)
+    db.commit()
     candidates = build_candidates(db, restaurants, body.lat, body.lng, body.radius_m, current, companions)
     pick = pick_suggestion(candidates)
 
@@ -59,6 +67,7 @@ def search(
     if lat is not None and lng is not None:
         results = [r for r in results if r.get("lat") is not None and haversine_m(lat, lng, r["lat"], r["lng"]) <= radius]
     restaurants = [_upsert_restaurant(db, data) for data in results if data.get("lat") is not None]
+    record_seen_cuisines(current, restaurants)
     db.commit()
     return [RestaurantOut.model_validate(r) for r in restaurants[:10]]
 
