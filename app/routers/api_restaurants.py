@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Blacklist, Rating, Restaurant, User
+from app.models import Blacklist, Rating, Restaurant, Search, User
 from app.schemas import RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services.recommend import (
     build_candidates,
@@ -35,6 +35,7 @@ def suggest(body: SuggestRequest, db: Session = Depends(get_db), current: User =
 
     restaurants = search_and_cache_restaurants(db, body.lat, body.lng, body.radius_m)
     record_seen_cuisines(current, restaurants)
+    db.add(Search(user_id=current.id))
     db.commit()
     candidates = build_candidates(db, restaurants, body.lat, body.lng, body.radius_m, current, companions)
     pick = pick_suggestion(candidates)

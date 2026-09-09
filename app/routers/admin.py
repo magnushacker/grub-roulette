@@ -1,3 +1,5 @@
+import datetime as dt
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func, select
@@ -5,9 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_admin, get_current_user_optional
-from app.models import Group, User
+from app.models import Blacklist, Group, Rating, Restaurant, Search, User, Visit
 from app.schemas import (
     AdminResetPasswordRequest,
+    AdminStatsOut,
     AdminUserOut,
     GroupOut,
     RenameGroupRequest,
@@ -33,6 +36,32 @@ def admin_page(request: Request, user: User | None = Depends(get_current_user_op
 @router.get("/api/admin/users", response_model=list[AdminUserOut])
 def list_users(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
     return db.scalars(select(User).order_by(User.display_name)).all()
+
+
+@router.get("/api/admin/stats", response_model=AdminStatsOut)
+def get_stats(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    def count(model, *where) -> int:
+        stmt = select(func.count()).select_from(model)
+        if where:
+            stmt = stmt.where(*where)
+        return db.scalar(stmt)
+
+    week_ago = dt.datetime.utcnow() - dt.timedelta(days=7)
+    return AdminStatsOut(
+        total_users=count(User),
+        total_admins=count(User, User.is_admin.is_(True)),
+        total_groups=count(Group),
+        users_without_group=count(User, User.group_id.is_(None)),
+        total_searches=count(Search),
+        searches_last_7_days=count(Search, Search.created_at >= week_ago),
+        total_visits=count(Visit),
+        visits_confirmed_suggested=count(Visit, Visit.was_suggested.is_(True)),
+        visits_logged_elsewhere=count(Visit, Visit.was_suggested.is_(False)),
+        total_ratings=count(Rating),
+        average_rating=db.scalar(select(func.avg(Rating.stars))),
+        total_blacklist_entries=count(Blacklist),
+        total_restaurants_cached=count(Restaurant),
+    )
 
 
 @router.delete("/api/admin/users/{user_id}", status_code=204)

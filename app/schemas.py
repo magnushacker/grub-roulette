@@ -114,6 +114,22 @@ class AdminResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class AdminStatsOut(BaseModel):
+    total_users: int
+    total_admins: int
+    total_groups: int
+    users_without_group: int
+    total_searches: int
+    searches_last_7_days: int
+    total_visits: int
+    visits_confirmed_suggested: int
+    visits_logged_elsewhere: int
+    total_ratings: int
+    average_rating: float | None
+    total_blacklist_entries: int
+    total_restaurants_cached: int
+
+
 class BlacklistEntryOut(BaseModel):
     restaurant_id: int
     name: str
