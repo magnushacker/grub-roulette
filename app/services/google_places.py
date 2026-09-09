@@ -1,4 +1,4 @@
-"""Thin client for the Places API (New) "Nearby Search" and "Text Search" endpoints.
+"""Thin client for the Places API (New) "Nearby Search" endpoint.
 
 Unlike the legacy Places API, this one returns cuisine-specific place types
 (italian_restaurant, asian_restaurant, ...) instead of just generic venue
@@ -16,7 +16,6 @@ from app.config import settings
 _METERS_PER_DEGREE_LAT = 111_320
 
 NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
-TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 
 FIELD_MASK = ",".join(
     [
@@ -155,21 +154,3 @@ def nearby_restaurants(lat: float, lng: float, radius_m: int) -> list[dict]:
                 if place_id and place_id not in results:
                     results[place_id] = normalized
     return list(results.values())
-
-
-def text_search_restaurants(
-    query: str, lat: float | None = None, lng: float | None = None, radius_m: int | None = None
-) -> list[dict]:
-    if not settings.google_places_api_key or not query.strip():
-        return []
-
-    body: dict = {"textQuery": f"{query} restaurant"}
-    if lat is not None and lng is not None:
-        body["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": min(radius_m or 20000, 50000)}}
-
-    with httpx.Client(timeout=10.0) as client:
-        resp = client.post(TEXT_SEARCH_URL, json=body, headers=_headers())
-        if resp.status_code != 200:
-            raise GooglePlacesError(f"Google Places error: {resp.status_code} - {resp.text}")
-        data = resp.json()
-        return [_normalize(p) for p in data.get("places", [])]

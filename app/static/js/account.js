@@ -225,70 +225,9 @@ async function loadAccountRatings() {
     }
 }
 
-const accountRestaurantSearch = document.getElementById("account-restaurant-search");
-const accountRestaurantResults = document.getElementById("account-restaurant-results");
-let accountSearchTimer = null;
-
-accountRestaurantSearch.addEventListener("input", () => {
-    clearTimeout(accountSearchTimer);
-    const q = accountRestaurantSearch.value.trim();
-    if (q.length < 2) {
-        accountRestaurantResults.innerHTML = "";
-        return;
-    }
-    accountSearchTimer = setTimeout(async () => {
-        const res = await fetch(`/api/restaurants/search?${new URLSearchParams({ q })}`);
-        const found = await res.json();
-        accountRestaurantResults.innerHTML = "";
-        if (found.length === 0) {
-            accountRestaurantResults.textContent = "No matches.";
-            return;
-        }
-        for (const r of found) {
-            const row = document.createElement("div");
-            row.className = "list-row";
-            row.innerHTML = `<span><span class="list-row-name">${r.name}</span> <span class="list-row-address">${r.address}</span></span>`;
-            const actions = document.createElement("div");
-            actions.className = "list-row-actions";
-
-            const blacklistBtn = document.createElement("button");
-            blacklistBtn.type = "button";
-            blacklistBtn.className = "secondary";
-            blacklistBtn.textContent = "Blacklist";
-            blacklistBtn.addEventListener("click", async () => {
-                await fetch(`/api/restaurants/${r.id}/blacklist`, { method: "POST" });
-                blacklistBtn.textContent = "Blacklisted";
-                blacklistBtn.disabled = true;
-                loadAccountBlacklist();
-            });
-
-            const visitBtn = document.createElement("button");
-            visitBtn.type = "button";
-            visitBtn.className = "secondary";
-            visitBtn.textContent = "Log visit today";
-            visitBtn.addEventListener("click", async () => {
-                await fetch("/api/visits", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ restaurant_id: r.id, was_suggested: false, companion_ids: [] }),
-                });
-                visitBtn.textContent = "Logged";
-                visitBtn.disabled = true;
-            });
-
-            actions.appendChild(blacklistBtn);
-            actions.appendChild(visitBtn);
-            row.appendChild(actions);
-            accountRestaurantResults.appendChild(row);
-        }
-    }, 350);
-});
-
 document.getElementById("open-account-modal").addEventListener("click", async () => {
     await populateAccountGroupSelect();
     loadAccountCuisines();
-    accountRestaurantSearch.value = "";
-    accountRestaurantResults.innerHTML = "";
     loadAccountBlacklist();
     loadAccountRatings();
     accountModal.showModal();
