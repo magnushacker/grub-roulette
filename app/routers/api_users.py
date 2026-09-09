@@ -1,11 +1,15 @@
+import datetime as dt
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Blacklist, Rating, User
-from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, UpdateGroupRequest, UserOut
+from app.models import Blacklist, Rating, User, Visit
+from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, UpdateGroupRequest, UserOut, VisitEntryOut
+
+RECENT_VISIT_DAYS = 7
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -63,5 +67,30 @@ def my_ratings(db: Session = Depends(get_db), current: User = Depends(get_curren
     entries = db.scalars(select(Rating).where(Rating.user_id == current.id)).all()
     return [
         RatingEntryOut(restaurant_id=e.restaurant_id, name=e.restaurant.name, address=e.restaurant.address, stars=e.stars)
+        for e in entries
+    ]
+
+
+@router.get("/me/visits", response_model=list[VisitEntryOut])
+def my_visits(all: bool = False, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    query = select(Visit).where(Visit.user_id == current.id)
+    if not all:
+        query = query.where(Visit.visit_date >= dt.date.today() - dt.timedelta(days=RECENT_VISIT_DAYS))
+    entries = db.scalars(query.order_by(Visit.visit_date.desc())).all()
+
+    ratings = {
+        r.restaurant_id: r.stars
+        for r in db.scalars(select(Rating).where(Rating.user_id == current.id)).all()
+    }
+    return [
+        VisitEntryOut(
+            id=e.id,
+            restaurant_id=e.restaurant_id,
+            name=e.restaurant.name,
+            address=e.restaurant.address,
+            visit_date=e.visit_date,
+            was_suggested=e.was_suggested,
+            stars=ratings.get(e.restaurant_id),
+        )
         for e in entries
     ]
