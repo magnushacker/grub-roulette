@@ -75,6 +75,7 @@ class Restaurant(Base):
     yelp_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     yelp_rating_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     maps_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    website_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     last_fetched: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     ratings: Mapped[list["Rating"]] = relationship(back_populates="restaurant", cascade="all, delete-orphan")

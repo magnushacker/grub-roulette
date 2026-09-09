@@ -23,6 +23,7 @@ class RestaurantOut(BaseModel):
     yelp_rating: float | None
     yelp_rating_count: int | None
     maps_url: str | None
+    website_url: str | None
     distance_m: float | None = None
     personal_rating: float | None = None
     companion_rating: float | None = None
