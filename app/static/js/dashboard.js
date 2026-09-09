@@ -371,7 +371,6 @@ function renderRestaurantCard(r, container) {
     const visitActionEl = card.querySelector(".r-visit-action");
     const markConfirmed = (name) => {
         visitActionEl.innerHTML = `<span class="confirmed">Logged: ${name}</span>`;
-        elsewhereBox.hidden = true;
     };
 
     card.querySelector(".btn-went-here").addEventListener("click", async () => {
@@ -381,53 +380,6 @@ function renderRestaurantCard(r, container) {
             body: JSON.stringify({ restaurant_id: r.id, was_suggested: true, companion_ids: selectedCompanionIds }),
         });
         markConfirmed(r.name);
-    });
-
-    const elsewhereBox = card.querySelector(".elsewhere-search");
-    const elsewhereInput = card.querySelector(".elsewhere-input");
-    const elsewhereResults = card.querySelector(".elsewhere-results");
-
-    card.querySelector(".btn-went-elsewhere").addEventListener("click", () => {
-        elsewhereBox.hidden = false;
-        elsewhereInput.focus();
-    });
-
-    let searchTimer = null;
-    elsewhereInput.addEventListener("input", () => {
-        clearTimeout(searchTimer);
-        const q = elsewhereInput.value.trim();
-        if (q.length < 2) {
-            elsewhereResults.innerHTML = "";
-            return;
-        }
-        searchTimer = setTimeout(async () => {
-            const params = new URLSearchParams({ q });
-            if (origin) {
-                params.set("lat", origin.lat);
-                params.set("lng", origin.lng);
-                params.set("radius_m", document.getElementById("radius").value);
-            }
-            const res = await fetch(`/api/restaurants/search?${params}`);
-            const found = await res.json();
-            elsewhereResults.innerHTML = "";
-            for (const f of found) {
-                const btn = document.createElement("button");
-                btn.textContent = `${f.name} — ${f.address}`;
-                btn.addEventListener("click", async () => {
-                    await fetch("/api/visits", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            restaurant_id: f.id,
-                            was_suggested: false,
-                            companion_ids: selectedCompanionIds,
-                        }),
-                    });
-                    markConfirmed(f.name);
-                });
-                elsewhereResults.appendChild(btn);
-            }
-        }, 350);
     });
 
     container.appendChild(card);

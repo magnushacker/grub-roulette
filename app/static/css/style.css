@@ -338,29 +338,12 @@ button.secondary {
 
 .r-actions a { font-size: 0.85rem; }
 
-.btn-went-elsewhere, .btn-blacklist {
+.btn-blacklist {
     background: none;
     border: 1px solid var(--border);
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 0.8rem;
-}
-
-.elsewhere-search { margin-top: 8px; }
-
-.elsewhere-results {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 8px;
-}
-
-.elsewhere-results button {
-    text-align: left;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 10px;
 }
 
 .confirmed {
