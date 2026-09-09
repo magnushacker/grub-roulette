@@ -109,6 +109,17 @@ class Blacklist(Base):
     restaurant: Mapped["Restaurant"] = relationship(back_populates="blacklist_entries")
 
 
+class Search(Base):
+    """One row per POST /api/restaurants/suggest call, purely for the admin
+    usage-stats panel -- nothing else in the app reads this table."""
+
+    __tablename__ = "searches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+
+
 class Visit(Base):
     __tablename__ = "visits"
 
