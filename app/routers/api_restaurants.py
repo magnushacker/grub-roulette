@@ -2,15 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, User
 from app.schemas import RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
-from app.services import google_places
 from app.services.recommend import (
     build_candidates,
-    haversine_m,
     pick_suggestion,
     record_seen_cuisines,
     search_and_cache_restaurants,
@@ -47,31 +44,6 @@ def suggest(body: SuggestRequest, db: Session = Depends(get_db), current: User =
         pick=_to_out(pick) if pick else None,
         alternatives=[_to_out(c) for c in alternatives],
     )
-
-
-@router.get("/search", response_model=list[RestaurantOut])
-def search(
-    q: str,
-    lat: float | None = None,
-    lng: float | None = None,
-    radius_m: int | None = None,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    """Live text search, used for 'I went somewhere else' lookups. Restricted to
-    the given radius around the origin -- Google's locationBias only nudges
-    ranking, it doesn't exclude distant matches, so results are also hard-
-    filtered by distance here."""
-    from app.services.recommend import _upsert_restaurant  # local import to avoid confusing public API surface
-
-    radius = radius_m or settings.default_radius_m
-    results = google_places.text_search_restaurants(q, lat, lng, radius)
-    if lat is not None and lng is not None:
-        results = [r for r in results if r.get("lat") is not None and haversine_m(lat, lng, r["lat"], r["lng"]) <= radius]
-    restaurants = [_upsert_restaurant(db, data) for data in results if data.get("lat") is not None]
-    record_seen_cuisines(current, restaurants)
-    db.commit()
-    return [RestaurantOut.model_validate(r) for r in restaurants[:10]]
 
 
 @router.post("/{restaurant_id}/rate", response_model=RestaurantOut)
