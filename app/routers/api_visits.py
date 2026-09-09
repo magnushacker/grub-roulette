@@ -1,14 +1,20 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Restaurant, User, Visit
+from app.models import Rating, Restaurant, User, Visit
 from app.schemas import VisitDateRequest, VisitRequest
 
 router = APIRouter(prefix="/api/visits", tags=["visits"])
+
+# Logging a visit doesn't ask for a rating, so give the restaurant a neutral
+# starting rating rather than leaving it unrated -- an existing explicit
+# rating is left alone.
+DEFAULT_VISIT_STARS = 3
 
 
 @router.post("", status_code=201)
@@ -25,6 +31,13 @@ def log_visit(body: VisitRequest, db: Session = Depends(get_db), current: User =
         visit_date=body.visit_date or dt.date.today(),
     )
     db.add(visit)
+
+    existing_rating = db.scalar(
+        select(Rating).where(Rating.user_id == current.id, Rating.restaurant_id == body.restaurant_id)
+    )
+    if existing_rating is None:
+        db.add(Rating(user_id=current.id, restaurant_id=body.restaurant_id, stars=DEFAULT_VISIT_STARS))
+
     db.commit()
     return {"ok": True}
 

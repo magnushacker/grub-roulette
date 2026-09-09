@@ -78,10 +78,6 @@ def my_visits(all: bool = False, db: Session = Depends(get_db), current: User = 
         query = query.where(Visit.visit_date >= dt.date.today() - dt.timedelta(days=RECENT_VISIT_DAYS))
     entries = db.scalars(query.order_by(Visit.visit_date.desc())).all()
 
-    ratings = {
-        r.restaurant_id: r.stars
-        for r in db.scalars(select(Rating).where(Rating.user_id == current.id)).all()
-    }
     return [
         VisitEntryOut(
             id=e.id,
@@ -90,7 +86,6 @@ def my_visits(all: bool = False, db: Session = Depends(get_db), current: User = 
             address=e.restaurant.address,
             visit_date=e.visit_date,
             was_suggested=e.was_suggested,
-            stars=ratings.get(e.restaurant_id),
         )
         for e in entries
     ]
