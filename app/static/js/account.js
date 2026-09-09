@@ -157,7 +157,7 @@ async function loadAccountBlacklist() {
         const undoBtn = document.createElement("button");
         undoBtn.type = "button";
         undoBtn.className = "secondary";
-        undoBtn.textContent = "Un-blacklist";
+        undoBtn.textContent = "Remove";
         undoBtn.addEventListener("click", async () => {
             await fetch(`/api/restaurants/${entry.restaurant_id}/blacklist`, { method: "DELETE" });
             row.remove();
@@ -214,7 +214,7 @@ async function loadAccountRatings() {
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "secondary";
-        removeBtn.textContent = "Remove rating";
+        removeBtn.textContent = "Remove";
         removeBtn.addEventListener("click", async () => {
             await fetch(`/api/restaurants/${entry.restaurant_id}/rate`, { method: "DELETE" });
             row.remove();
@@ -280,17 +280,6 @@ async function loadAccountVisits() {
         });
         actions.appendChild(dateInput);
 
-        actions.appendChild(
-            starPickerFor(entry.stars, async (n) => {
-                await fetch(`/api/restaurants/${entry.restaurant_id}/rate`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ stars: n }),
-                });
-                loadAccountRatings();
-            })
-        );
-
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "secondary";
@@ -313,7 +302,7 @@ document.getElementById("account-visits-toggle").addEventListener("click", () =>
 });
 
 // --- Search-and-log flow: find a restaurant that wasn't reached via "Find
-// lunch" and log a visit for it with a chosen date and (optionally) a rating.
+// lunch" and log a visit for it with a chosen date.
 let accountVisitSearchTimer = null;
 
 async function runAccountVisitSearch(q) {
@@ -343,9 +332,6 @@ async function runAccountVisitSearch(q) {
         dateInput.valueAsDate = new Date();
         actions.appendChild(dateInput);
 
-        let chosenStars = 0;
-        actions.appendChild(starPickerFor(0, (n) => { chosenStars = n; }));
-
         const logBtn = document.createElement("button");
         logBtn.type = "button";
         logBtn.className = "secondary";
@@ -362,18 +348,11 @@ async function runAccountVisitSearch(q) {
                     visit_date: dateInput.value || null,
                 }),
             });
-            if (chosenStars > 0) {
-                await fetch(`/api/restaurants/${r.id}/rate`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ stars: chosenStars }),
-                });
-            }
             document.getElementById("account-visit-search").value = "";
             resultsEl.hidden = true;
             resultsEl.innerHTML = "";
             loadAccountVisits();
-            if (chosenStars > 0) loadAccountRatings();
+            loadAccountRatings();
         });
         actions.appendChild(logBtn);
 

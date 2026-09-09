@@ -151,4 +151,3 @@ class VisitEntryOut(BaseModel):
     address: str
     visit_date: dt.date
     was_suggested: bool
-    stars: int | None
