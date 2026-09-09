@@ -45,6 +45,11 @@ class VisitRequest(BaseModel):
     restaurant_id: int
     was_suggested: bool = True
     companion_ids: list[int] = Field(default_factory=list)
+    visit_date: dt.date | None = None
+
+
+class VisitDateRequest(BaseModel):
+    visit_date: dt.date
 
 
 class PreferencesRequest(BaseModel):
@@ -141,3 +146,13 @@ class RatingEntryOut(BaseModel):
     name: str
     address: str
     stars: int
+
+
+class VisitEntryOut(BaseModel):
+    id: int
+    restaurant_id: int
+    name: str
+    address: str
+    visit_date: dt.date
+    was_suggested: bool
+    stars: int | None

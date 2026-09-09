@@ -225,10 +225,164 @@ async function loadAccountRatings() {
     }
 }
 
+function starPickerFor(initialStars, onPick) {
+    const picker = document.createElement("div");
+    picker.className = "star-picker";
+    for (let n = 1; n <= 5; n++) {
+        const star = document.createElement("span");
+        star.dataset.star = n;
+        star.textContent = "★";
+        picker.appendChild(star);
+    }
+    const stars = picker.querySelectorAll("span");
+    const highlight = (n) => stars.forEach((s, i) => s.classList.toggle("filled", i < n));
+    highlight(initialStars || 0);
+    stars.forEach((s) => {
+        s.addEventListener("click", () => {
+            const n = parseInt(s.dataset.star, 10);
+            highlight(n);
+            onPick(n);
+        });
+    });
+    return picker;
+}
+
+let accountShowAllVisits = false;
+
+async function loadAccountVisits() {
+    const el = document.getElementById("account-visits");
+    const toggle = document.getElementById("account-visits-toggle");
+    toggle.textContent = accountShowAllVisits ? "Show last 7 days" : "Show full history";
+    const res = await fetch(`/api/users/me/visits?all=${accountShowAllVisits}`);
+    const entries = await res.json();
+    el.innerHTML = "";
+    if (entries.length === 0) {
+        el.textContent = accountShowAllVisits ? "No visits logged yet." : "No visits in the last 7 days.";
+        return;
+    }
+    for (const entry of entries) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `<span><span class="list-row-name">${entry.name}</span> <span class="list-row-address">${entry.address}</span></span>`;
+        const actions = document.createElement("div");
+        actions.className = "list-row-actions";
+
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.value = entry.visit_date;
+        dateInput.addEventListener("change", async () => {
+            if (!dateInput.value) return;
+            await fetch(`/api/visits/${entry.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ visit_date: dateInput.value }),
+            });
+        });
+        actions.appendChild(dateInput);
+
+        actions.appendChild(
+            starPickerFor(entry.stars, async (n) => {
+                await fetch(`/api/restaurants/${entry.restaurant_id}/rate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stars: n }),
+                });
+                loadAccountRatings();
+            })
+        );
+
+        row.appendChild(actions);
+        el.appendChild(row);
+    }
+}
+
+document.getElementById("account-visits-toggle").addEventListener("click", () => {
+    accountShowAllVisits = !accountShowAllVisits;
+    loadAccountVisits();
+});
+
+// --- Search-and-log flow: find a restaurant that wasn't reached via "Find
+// lunch" and log a visit for it with a chosen date and (optionally) a rating.
+let accountVisitSearchTimer = null;
+
+async function runAccountVisitSearch(q) {
+    const resultsEl = document.getElementById("account-visit-search-results");
+    if (!q.trim()) {
+        resultsEl.hidden = true;
+        resultsEl.innerHTML = "";
+        return;
+    }
+    const res = await fetch(`/api/restaurants/search?q=${encodeURIComponent(q)}`);
+    const results = await res.json();
+    resultsEl.innerHTML = "";
+    resultsEl.hidden = false;
+    if (results.length === 0) {
+        resultsEl.textContent = "No matches.";
+        return;
+    }
+    for (const r of results) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `<span><span class="list-row-name">${r.name}</span> <span class="list-row-address">${r.address}</span></span>`;
+        const actions = document.createElement("div");
+        actions.className = "list-row-actions";
+
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.valueAsDate = new Date();
+        actions.appendChild(dateInput);
+
+        let chosenStars = 0;
+        actions.appendChild(starPickerFor(0, (n) => { chosenStars = n; }));
+
+        const logBtn = document.createElement("button");
+        logBtn.type = "button";
+        logBtn.className = "secondary";
+        logBtn.textContent = "Log visit";
+        logBtn.addEventListener("click", async () => {
+            await fetch("/api/visits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    restaurant_id: r.id,
+                    was_suggested: false,
+                    visit_date: dateInput.value || null,
+                }),
+            });
+            if (chosenStars > 0) {
+                await fetch(`/api/restaurants/${r.id}/rate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stars: chosenStars }),
+                });
+            }
+            document.getElementById("account-visit-search").value = "";
+            resultsEl.hidden = true;
+            resultsEl.innerHTML = "";
+            loadAccountVisits();
+            if (chosenStars > 0) loadAccountRatings();
+        });
+        actions.appendChild(logBtn);
+
+        row.appendChild(actions);
+        resultsEl.appendChild(row);
+    }
+}
+
+document.getElementById("account-visit-search").addEventListener("input", (e) => {
+    clearTimeout(accountVisitSearchTimer);
+    const q = e.target.value;
+    accountVisitSearchTimer = setTimeout(() => runAccountVisitSearch(q), 300);
+});
+
 document.getElementById("open-account-modal").addEventListener("click", async () => {
     await populateAccountGroupSelect();
     loadAccountCuisines();
     loadAccountBlacklist();
     loadAccountRatings();
+    accountShowAllVisits = false;
+    loadAccountVisits();
+    document.getElementById("account-visit-search").value = "";
+    document.getElementById("account-visit-search-results").hidden = true;
     accountModal.showModal();
 });

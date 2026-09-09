@@ -47,6 +47,16 @@ def suggest(body: SuggestRequest, db: Session = Depends(get_db), current: User =
     )
 
 
+@router.get("/search", response_model=list[RestaurantOut])
+def search(q: str, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    """Used to find a restaurant for logging a visit that didn't come from
+    "Find lunch". Searches only restaurants already cached locally (from
+    past "Find lunch" searches by anyone) rather than calling Google's live
+    Text Search -- if it's not in the cache, nobody's searched near it yet."""
+    results = db.scalars(select(Restaurant).where(Restaurant.name.ilike(f"%{q}%"))).all()
+    return [RestaurantOut.model_validate(r) for r in results[:10]]
+
+
 @router.post("/{restaurant_id}/rate", response_model=RestaurantOut)
 def rate_restaurant(restaurant_id: int, body: RateRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     restaurant = db.get(Restaurant, restaurant_id)
