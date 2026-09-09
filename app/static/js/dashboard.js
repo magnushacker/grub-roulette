@@ -205,9 +205,17 @@ function companionState(cuisine) {
     return prefer ? "prefer" : "neutral";
 }
 
+// Once you've clicked a chip -- even cycling it back to neutral -- it must
+// keep showing *your* actual pick, not the companion default. Using
+// cuisineState() !== "neutral" here instead of this "have I ever touched
+// it" check breaks the cycle visually: cycling prefer -> avoid -> neutral
+// lands back on "neutral", which reads as unset and falls through to a
+// companion's "prefer" again -- so a cuisine a companion likes can never be
+// *shown* as neutral, and clicking it looks stuck alternating between green
+// and red instead of a clean three-way cycle.
 function effectiveCuisineState(cuisine) {
-    const mine = cuisineState(cuisine);
-    return mine !== "neutral" ? mine : companionState(cuisine);
+    const key = cuisine.toLowerCase();
+    return cuisineStates.has(key) ? cuisineStates.get(key) : companionState(cuisine);
 }
 
 // Grows as search results come in, rather than listing every cuisine ever cached.
