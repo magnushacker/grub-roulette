@@ -1,4 +1,4 @@
-let map, marker;
+let map, marker, searchCircle;
 let origin = null; // {lat, lng}
 let selectedCompanionIds = [];
 let me = null;
@@ -42,7 +42,31 @@ function setOrigin(lat, lng, save) {
     } else {
         marker = new google.maps.Marker({ position: { lat, lng }, map });
     }
+    updateSearchCircle();
     if (save) saveState();
+}
+
+// Shows the search radius on the map so it's clear how far "Find lunch"
+// will look, rather than leaving that to the number next to the slider.
+function updateSearchCircle() {
+    if (!origin) return;
+    const radius = parseInt(document.getElementById("radius").value, 10);
+    if (searchCircle) {
+        searchCircle.setCenter(origin);
+        searchCircle.setRadius(radius);
+    } else {
+        searchCircle = new google.maps.Circle({
+            map,
+            center: origin,
+            radius,
+            clickable: false,
+            strokeColor: "#d97706",
+            strokeOpacity: 0.6,
+            strokeWeight: 1,
+            fillColor: "#d97706",
+            fillOpacity: 0.08,
+        });
+    }
 }
 
 function clearRestaurantMarkers() {
@@ -490,6 +514,7 @@ async function findLunch() {
 
 document.getElementById("radius").addEventListener("input", (e) => {
     document.getElementById("radius-value").textContent = e.target.value;
+    updateSearchCircle();
 });
 document.getElementById("radius").addEventListener("change", saveState);
 document.getElementById("find-lunch").addEventListener("click", findLunch);
