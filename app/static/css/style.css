@@ -107,6 +107,21 @@ input[type="text"], input[type="password"], input[type="email"] {
     font-size: 1rem;
 }
 
+select {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background: var(--panel-bg);
+    color: var(--text);
+    cursor: pointer;
+}
+
+select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
 .error { color: #b91c1c; }
 
 input[type="range"] {
@@ -207,6 +222,12 @@ input[type="range"]::-moz-range-track {
     border-radius: 999px;
     padding: 4px 10px;
     font-size: 0.9rem;
+}
+
+#companion-group-picker, #companion-name-picker {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
 }
 
 button {

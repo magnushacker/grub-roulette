@@ -96,6 +96,7 @@ function focusRestaurant(id) {
 }
 
 const pickableCompanions = new Map(); // id -> user, for companions from other groups not yet added
+let groupNameById = new Map(); // group id -> group name, for the group-picker's option labels
 
 function addCompanionCheckbox(u, checked) {
     const el = document.getElementById("companions");
@@ -114,19 +115,55 @@ function addCompanionCheckbox(u, checked) {
     el.appendChild(label);
 }
 
+// Key used to bucket pickableCompanions by group in the cascading picker
+// below -- group ids are numbers, so "" (rather than "null"/"0") is the one
+// value a real group id can never collide with.
+function groupKeyFor(u) {
+    return u.group_id == null ? "" : String(u.group_id);
+}
+
+// Two-step "add a companion": pick a group, then a name from within it.
+// Rebuilt from the current pickableCompanions after every add so a group
+// that's been fully picked from disappears from the first dropdown too.
+function refreshCompanionPickers() {
+    const groupPicker = document.getElementById("companion-group-picker");
+    const namePicker = document.getElementById("companion-name-picker");
+
+    const groupKeys = new Set(Array.from(pickableCompanions.values()).map(groupKeyFor));
+    const sortedKeys = Array.from(groupKeys).sort((a, b) =>
+        (a === "" ? "No group" : groupNameById.get(parseInt(a, 10)) || "No group").localeCompare(
+            b === "" ? "No group" : groupNameById.get(parseInt(b, 10)) || "No group"
+        )
+    );
+
+    groupPicker.innerHTML = '<option value="">Add a companion from a group...</option>';
+    for (const key of sortedKeys) {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key === "" ? "No group" : groupNameById.get(parseInt(key, 10)) || "No group";
+        groupPicker.appendChild(opt);
+    }
+    groupPicker.hidden = sortedKeys.length === 0;
+
+    namePicker.hidden = true;
+    namePicker.innerHTML = '<option value="">Choose a name...</option>';
+}
+
 async function loadCompanions() {
     const el = document.getElementById("companions");
-    const picker = document.getElementById("companion-picker");
+    const groupPicker = document.getElementById("companion-group-picker");
+    const namePicker = document.getElementById("companion-name-picker");
     const [usersRes, groupsRes] = await Promise.all([fetch("/api/users"), fetch("/api/groups")]);
     const users = await usersRes.json();
     const groups = await groupsRes.json();
     usersById = new Map(users.map((u) => [u.id, u]));
     if (users.length === 0) {
         el.textContent = "No companions registered yet.";
-        picker.hidden = true;
+        groupPicker.hidden = true;
+        namePicker.hidden = true;
         return;
     }
-    const groupName = new Map(groups.map((g) => [g.id, g.name]));
+    groupNameById = new Map(groups.map((g) => [g.id, g.name]));
     const defaults = new Set(me ? me.default_companion_ids : []);
     const myGroupId = me ? me.group_id : null;
 
@@ -146,19 +183,34 @@ async function loadCompanions() {
     selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
 
     pickableCompanions.clear();
-    picker.innerHTML = '<option value="">Add a companion from another group...</option>';
     for (const u of otherGroup.filter((u) => !defaults.has(u.id))) {
         pickableCompanions.set(u.id, u);
-        const opt = document.createElement("option");
-        opt.value = u.id;
-        opt.textContent = `${u.display_name} (${groupName.get(u.group_id) || "no group"})`;
-        picker.appendChild(opt);
     }
-    picker.hidden = pickableCompanions.size === 0;
+    refreshCompanionPickers();
     refreshCuisineChips();
 }
 
-document.getElementById("companion-picker").addEventListener("change", (e) => {
+document.getElementById("companion-group-picker").addEventListener("change", (e) => {
+    const namePicker = document.getElementById("companion-name-picker");
+    const key = e.target.value;
+    namePicker.innerHTML = '<option value="">Choose a name...</option>';
+    if (key === "") {
+        namePicker.hidden = true;
+        return;
+    }
+    const names = Array.from(pickableCompanions.values())
+        .filter((u) => groupKeyFor(u) === key)
+        .sort((a, b) => a.display_name.localeCompare(b.display_name));
+    for (const u of names) {
+        const opt = document.createElement("option");
+        opt.value = u.id;
+        opt.textContent = u.display_name;
+        namePicker.appendChild(opt);
+    }
+    namePicker.hidden = false;
+});
+
+document.getElementById("companion-name-picker").addEventListener("change", (e) => {
     const id = parseInt(e.target.value, 10);
     const u = pickableCompanions.get(id);
     if (!u) return;
@@ -167,9 +219,8 @@ document.getElementById("companion-picker").addEventListener("change", (e) => {
     }
     addCompanionCheckbox(u, true);
     pickableCompanions.delete(id);
-    e.target.querySelector(`option[value="${id}"]`).remove();
-    e.target.value = "";
-    e.target.hidden = pickableCompanions.size === 0;
+    document.getElementById("companion-group-picker").value = "";
+    refreshCompanionPickers();
     selectedCompanionIds = Array.from(document.querySelectorAll("#companions input:checked")).map((c) => parseInt(c.value, 10));
     refreshCuisineChips();
     saveState();
