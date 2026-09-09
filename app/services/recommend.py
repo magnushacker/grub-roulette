@@ -87,6 +87,8 @@ def _merge_sources(google_results: list[dict], yelp_results: list[dict]) -> list
                 "yelp_rating": y["yelp_rating"],
                 "yelp_rating_count": y["yelp_rating_count"],
                 "maps_url": None,
+                # Yelp Fusion's search response has no business website field.
+                "website_url": None,
             }
         )
     return merged
@@ -130,6 +132,8 @@ def _upsert_restaurant(db: Session, data: dict) -> Restaurant:
         restaurant.yelp_id = data["yelp_id"]
     if data.get("maps_url"):
         restaurant.maps_url = data["maps_url"]
+    if data.get("website_url"):
+        restaurant.website_url = data["website_url"]
     restaurant.last_fetched = dt.datetime.utcnow()
     return restaurant
 

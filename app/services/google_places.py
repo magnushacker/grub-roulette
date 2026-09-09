@@ -28,6 +28,7 @@ FIELD_MASK = ",".join(
         "places.rating",
         "places.userRatingCount",
         "places.googleMapsUri",
+        "places.websiteUri",
     ]
 )
 
@@ -98,6 +99,10 @@ def _normalize(place: dict) -> dict:
         "google_rating": place.get("rating"),
         "google_rating_count": place.get("userRatingCount"),
         "maps_url": place.get("googleMapsUri"),
+        # The venue's own site when Google has one. Coverage is patchy and it's
+        # sometimes a social/delivery page rather than a real homepage, so the UI
+        # labels this "Website" rather than promising a menu.
+        "website_url": place.get("websiteUri"),
     }
 
 

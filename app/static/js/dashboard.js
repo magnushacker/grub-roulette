@@ -412,6 +412,13 @@ function renderRestaurantCard(r, container) {
         mapsLink.remove();
     }
 
+    const websiteLink = card.querySelector(".r-website-link");
+    if (r.website_url) {
+        websiteLink.href = r.website_url;
+    } else {
+        websiteLink.remove();
+    }
+
     const starPicker = card.querySelector(".star-picker");
     const stars = starPicker.querySelectorAll("span");
     const highlight = (n) => stars.forEach((s, i) => s.classList.toggle("filled", i < n));
