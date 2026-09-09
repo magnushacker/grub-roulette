@@ -37,8 +37,8 @@
 
             <h3>First, some places get ruled out</h3>
             <ul>
-                <li>Anywhere you or a joining colleague has <strong>blacklisted</strong></li>
-                <li>Anywhere serving a cuisine you or a joining colleague marked <strong>&#10007; don't suggest</strong></li>
+                <li>Anywhere you or a joining companion has <strong>blacklisted</strong></li>
+                <li>Anywhere serving a cuisine you or a joining companion marked <strong>&#10007; don't suggest</strong></li>
                 <li>Anywhere you've logged a visit to in the last {{ exclude_days }} days</li>
                 <li>Anything outside your search radius</li>
             </ul>
@@ -47,15 +47,15 @@
             <ul>
                 <li><strong>Rating (45%)</strong> — see below for how this is built</li>
                 <li><strong>Distance (25%)</strong> — closer beats farther, scaled across your search radius</li>
-                <li><strong>Preferred cuisine (15%)</strong> — a bonus if it matches a cuisine you or a colleague marked <strong>&#10003; prefer</strong></li>
+                <li><strong>Preferred cuisine (15%)</strong> — a bonus if it matches a cuisine you or a companion marked <strong>&#10003; prefer</strong></li>
                 <li><strong>Randomness (15%)</strong> — a small random nudge, so it's not the exact same answer every time</li>
             </ul>
 
             <h3>Where the rating comes from</h3>
             <p class="hint">In priority order, using the highest-confidence source available for that specific place:</p>
             <ul>
-                <li>If you or a joining colleague has <strong>rated this exact restaurant</strong>, that rating mostly decides it (blended a bit with its Google/Yelp rating)</li>
-                <li>Otherwise, if you or a colleague has rated <strong>other restaurants of the same cuisine</strong>, that cuisine track record counts for something (blended more heavily with Google/Yelp)</li>
+                <li>If you or a joining companion has <strong>rated this exact restaurant</strong>, that rating mostly decides it (blended a bit with its Google/Yelp rating)</li>
+                <li>Otherwise, if you or a companion has rated <strong>other restaurants of the same cuisine</strong>, that cuisine track record counts for something (blended more heavily with Google/Yelp)</li>
                 <li>Otherwise, it just falls back to the average Google/Yelp rating</li>
             </ul>
 
@@ -73,12 +73,12 @@
         <dialog id="account-modal">
             <h2>Your account</h2>
 
-            <label>Location
+            <label>Group
                 <select id="account-group-select"></select>
             </label>
             <div id="account-new-group" hidden>
-                <label>New location name<input type="text" id="account-new-group-name"></label>
-                <button type="button" id="account-create-group" class="secondary">Create location</button>
+                <label>New group name<input type="text" id="account-new-group-name"></label>
+                <button type="button" id="account-create-group" class="secondary">Create group</button>
             </div>
 
             <h3>Cuisine preferences</h3>

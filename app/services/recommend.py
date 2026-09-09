@@ -178,7 +178,7 @@ def _rating_for_user(restaurant: Restaurant, user_id: int) -> int | None:
 
 def _companion_rating_summary(restaurant: Restaurant, companion_ids: list[int]) -> tuple[float | None, int]:
     """Average + count of companions' (not the requester's own) ratings, so
-    the UI can show "you rated this" and "colleagues rated this" as two
+    the UI can show "you rated this" and "companions rated this" as two
     distinct, honestly-labeled numbers instead of one blended figure that
     silently mixes the two."""
     scores = [r.stars for r in restaurant.ratings if r.user_id in companion_ids]
