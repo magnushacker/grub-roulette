@@ -244,7 +244,14 @@ function refreshCuisineChips() {
     for (const c of cuisines) {
         el.appendChild(
             makeCuisineChip(c, {
-                getState: cuisineState,
+                // Cycle from what's actually *shown*, not your invisible own
+                // state -- otherwise the first click on a chip whose default
+                // came from a companion just recomputes the same color
+                // (neutral -> prefer, same green already on screen) and
+                // looks like it did nothing. Once you've touched a chip,
+                // effectiveCuisineState() is your own state anyway, so this
+                // only changes behavior for that first click.
+                getState: effectiveCuisineState,
                 displayState: effectiveCuisineState,
                 setState: (cuisine, state) => {
                     cuisineStates.set(cuisine.toLowerCase(), state);
