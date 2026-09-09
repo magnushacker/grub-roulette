@@ -91,6 +91,9 @@ function plotRestaurantMarkers(pick, alternatives) {
             map,
             title: r.name,
             icon: `http://maps.google.com/mapfiles/ms/icons/${isPick ? "green" : "blue"}-dot.png`,
+            // The pick can otherwise end up hidden under an overlapping
+            // alternative marker, since default z-index is latitude-based.
+            zIndex: isPick ? google.maps.Marker.MAX_ZINDEX + 1 : undefined,
         });
         m.addListener("click", () => focusRestaurant(r.id));
         restaurantMarkers.set(r.id, m);
