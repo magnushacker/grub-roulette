@@ -439,6 +439,7 @@ function renderRestaurantCard(r, container) {
 async function findLunch() {
     const resultEl = document.getElementById("result");
     const altEl = document.getElementById("alternatives");
+    const altHeading = document.getElementById("alternatives-heading");
 
     if (!origin) {
         resultEl.innerHTML = '<p class="error">Pick a starting location on the map first.</p>';
@@ -447,6 +448,7 @@ async function findLunch() {
 
     resultEl.innerHTML = "<p>Looking for a good spot...</p>";
     altEl.innerHTML = "";
+    altHeading.hidden = true;
     clearRestaurantMarkers();
 
     const radius_m = parseInt(document.getElementById("radius").value, 10);
@@ -470,6 +472,7 @@ async function findLunch() {
     renderRestaurantCard(data.pick, resultEl);
 
     altEl.innerHTML = "";
+    altHeading.hidden = false;
     if (data.alternatives.length === 0) {
         altEl.innerHTML = '<p class="hint">No other nearby options.</p>';
     }
