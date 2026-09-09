@@ -24,6 +24,8 @@ def _to_out(candidate: dict) -> RestaurantOut:
     out = RestaurantOut.model_validate(restaurant)
     out.distance_m = candidate["distance_m"]
     out.personal_rating = candidate["personal_rating"]
+    out.companion_rating = candidate["companion_rating"]
+    out.companion_rating_count = candidate["companion_rating_count"]
     out.combined_rating = candidate["combined_rating"]
     return out
 

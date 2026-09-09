@@ -169,6 +169,24 @@ def _personal_rating(restaurant: Restaurant, participant_ids: list[int]) -> floa
     return sum(scores) / len(scores) if scores else None
 
 
+def _rating_for_user(restaurant: Restaurant, user_id: int) -> int | None:
+    for rating in restaurant.ratings:
+        if rating.user_id == user_id:
+            return rating.stars
+    return None
+
+
+def _companion_rating_summary(restaurant: Restaurant, companion_ids: list[int]) -> tuple[float | None, int]:
+    """Average + count of companions' (not the requester's own) ratings, so
+    the UI can show "you rated this" and "colleagues rated this" as two
+    distinct, honestly-labeled numbers instead of one blended figure that
+    silently mixes the two."""
+    scores = [r.stars for r in restaurant.ratings if r.user_id in companion_ids]
+    if not scores:
+        return None, 0
+    return sum(scores) / len(scores), len(scores)
+
+
 def _cuisine_affinity_map(db: Session, participant_ids: list[int]) -> dict[str, float]:
     """Average star rating participants have given, per cuisine, across all restaurants they've rated."""
     rows = db.execute(
@@ -228,6 +246,10 @@ def build_candidates(
             continue
 
         personal = _personal_rating(restaurant, participant_ids)
+        requester_rating = _rating_for_user(restaurant, requester.id)
+        companion_rating, companion_rating_count = _companion_rating_summary(
+            restaurant, [c.id for c in companions]
+        )
         external = _external_rating(restaurant)
         if personal is not None:
             combined_rating = DIRECT_RATING_BLEND * personal + (1 - DIRECT_RATING_BLEND) * external
@@ -252,7 +274,9 @@ def build_candidates(
                 "restaurant": restaurant,
                 "distance_m": distance_m,
                 "combined_rating": combined_rating,
-                "personal_rating": personal,
+                "personal_rating": requester_rating,
+                "companion_rating": companion_rating,
+                "companion_rating_count": companion_rating_count,
                 "score": score,
             }
         )
