@@ -389,6 +389,21 @@ button.secondary {
     margin-right: 6px;
 }
 
+.admin-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-table th.sortable:hover {
+    color: var(--accent);
+}
+
+.sort-indicator {
+    display: inline-block;
+    width: 1em;
+    color: var(--accent);
+}
+
 .companions-list label button {
     background: none;
     border: none;

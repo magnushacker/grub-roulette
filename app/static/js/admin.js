@@ -75,12 +75,46 @@ function groupSelectFor(user) {
     return select;
 }
 
+let currentUsers = [];
+// Matches the backend's own default order (list_users sorts by display_name).
+let userSort = { key: "display_name", dir: "asc" };
+
+function groupNameFor(u) {
+    const g = groups.find((g) => g.id === u.group_id);
+    return g ? g.name : "No group";
+}
+
+function compareUsers(a, b, key) {
+    if (key === "is_admin") return (a.is_admin === b.is_admin) ? 0 : a.is_admin ? 1 : -1;
+    if (key === "created_at") return new Date(a.created_at) - new Date(b.created_at);
+    if (key === "group") return groupNameFor(a).localeCompare(groupNameFor(b));
+    // display_name/email -- email can be null on legacy accounts.
+    return (a[key] || "").localeCompare(b[key] || "");
+}
+
+function updateSortIndicators() {
+    for (const th of document.querySelectorAll("#users-table th.sortable")) {
+        const indicator = th.querySelector(".sort-indicator");
+        indicator.textContent = th.dataset.sort === userSort.key ? (userSort.dir === "asc" ? "▲" : "▼") : "";
+    }
+}
+
 async function loadUsers() {
     const res = await fetch("/api/admin/users");
-    const users = await res.json();
+    currentUsers = await res.json();
+    renderUsersTable();
+}
+
+function renderUsersTable() {
+    const sorted = [...currentUsers].sort((a, b) => {
+        const result = compareUsers(a, b, userSort.key);
+        return userSort.dir === "asc" ? result : -result;
+    });
+    updateSortIndicators();
+
     const tbody = document.getElementById("users-tbody");
     tbody.innerHTML = "";
-    for (const u of users) {
+    for (const u of sorted) {
         const tr = document.createElement("tr");
 
         const nameTd = document.createElement("td");
@@ -189,6 +223,14 @@ async function loadUsers() {
         tr.appendChild(actionsTd);
         tbody.appendChild(tr);
     }
+}
+
+for (const th of document.querySelectorAll("#users-table th.sortable")) {
+    th.addEventListener("click", () => {
+        const key = th.dataset.sort;
+        userSort = key === userSort.key ? { key, dir: userSort.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" };
+        renderUsersTable();
+    });
 }
 
 document.getElementById("add-group").addEventListener("click", async () => {
