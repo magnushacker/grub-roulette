@@ -2,7 +2,6 @@ const accountModal = document.getElementById("account-modal");
 const accountGroupSelect = document.getElementById("account-group-select");
 const accountNewGroup = document.getElementById("account-new-group");
 const accountNewGroupName = document.getElementById("account-new-group-name");
-const accountStatus = document.getElementById("account-modal-status");
 
 // Populated fresh each time the modal opens, and reused when saving cuisine
 // picks so that PATCH -- which replaces every preference field at once --
@@ -33,7 +32,14 @@ async function populateAccountGroupSelect() {
 
     accountNewGroup.hidden = true;
     accountNewGroupName.value = "";
-    accountStatus.textContent = "";
+}
+
+async function saveAccountGroup(groupId) {
+    await fetch("/api/users/me/group", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ group_id: groupId }),
+    });
 }
 
 // --- Cuisine preferences: every cuisine ever seen while searching, not just
@@ -103,7 +109,11 @@ function loadAccountCuisines() {
 }
 
 accountGroupSelect.addEventListener("change", () => {
-    accountNewGroup.hidden = accountGroupSelect.value !== "__new__";
+    const value = accountGroupSelect.value;
+    accountNewGroup.hidden = value !== "__new__";
+    // "__new__" isn't a real group yet -- nothing to save until it's created
+    // (see account-create-group below), which is also when it gets selected.
+    if (value !== "__new__") saveAccountGroup(value ? parseInt(value, 10) : null);
 });
 
 document.getElementById("account-create-group").addEventListener("click", async () => {
@@ -121,20 +131,8 @@ document.getElementById("account-create-group").addEventListener("click", async 
     opt.selected = true;
     accountGroupSelect.insertBefore(opt, accountGroupSelect.querySelector('option[value="__new__"]'));
     accountNewGroup.hidden = true;
-});
-
-document.getElementById("account-save").addEventListener("click", async () => {
-    const value = accountGroupSelect.value;
-    if (value === "__new__") {
-        accountStatus.textContent = "Create the new location first, or pick an existing one.";
-        return;
-    }
-    await fetch("/api/users/me/group", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ group_id: value ? parseInt(value, 10) : null }),
-    });
-    accountModal.close();
+    // Selecting the option above programmatically doesn't fire "change".
+    await saveAccountGroup(group.id);
 });
 
 document.getElementById("account-cancel").addEventListener("click", () => {
