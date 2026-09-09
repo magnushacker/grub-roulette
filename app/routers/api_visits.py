@@ -38,3 +38,12 @@ def update_visit_date(
         raise HTTPException(status_code=404, detail="Visit not found")
     visit.visit_date = body.visit_date
     db.commit()
+
+
+@router.delete("/{visit_id}", status_code=204)
+def delete_visit(visit_id: int, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    visit = db.get(Visit, visit_id)
+    if visit is None or visit.user_id != current.id:
+        raise HTTPException(status_code=404, detail="Visit not found")
+    db.delete(visit)
+    db.commit()

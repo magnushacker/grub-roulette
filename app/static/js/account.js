@@ -291,6 +291,17 @@ async function loadAccountVisits() {
             })
         );
 
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "secondary";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", async () => {
+            removeBtn.disabled = true;
+            await fetch(`/api/visits/${entry.id}`, { method: "DELETE" });
+            row.remove();
+        });
+        actions.appendChild(removeBtn);
+
         row.appendChild(actions);
         el.appendChild(row);
     }
@@ -340,6 +351,8 @@ async function runAccountVisitSearch(q) {
         logBtn.className = "secondary";
         logBtn.textContent = "Log visit";
         logBtn.addEventListener("click", async () => {
+            if (logBtn.disabled) return;
+            logBtn.disabled = true;
             await fetch("/api/visits", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
