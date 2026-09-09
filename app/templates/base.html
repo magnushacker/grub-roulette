@@ -24,6 +24,7 @@
         {% if user %}
         <div class="topbar-right">
             <button type="button" id="open-help-modal" class="link-button">How it works</button>
+            <button type="button" id="open-stats-modal" class="link-button">Stats</button>
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>
             {% if user.is_admin %}
             <a href="/admin" class="link-button">Admin</a>
@@ -70,6 +71,14 @@
             document.getElementById("open-help-modal").addEventListener("click", () => document.getElementById("help-modal").showModal());
             document.getElementById("help-close").addEventListener("click", () => document.getElementById("help-modal").close());
         </script>
+        <dialog id="stats-modal">
+            <h2>Usage stats</h2>
+            <div id="stats-grid" class="stats-grid">Loading...</div>
+            <div class="modal-actions">
+                <button type="button" id="stats-close" class="primary">Close</button>
+            </div>
+        </dialog>
+        <script src="/static/js/stats.js?v={{ static_version }}"></script>
         <dialog id="account-modal">
             <h2>Your account</h2>
 

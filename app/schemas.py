@@ -119,7 +119,7 @@ class AdminResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
-class AdminStatsOut(BaseModel):
+class StatsOut(BaseModel):
     total_users: int
     total_admins: int
     total_groups: int
