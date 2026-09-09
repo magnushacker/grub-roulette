@@ -130,7 +130,7 @@ def rename_group(
         raise HTTPException(status_code=404, detail="Group not found")
     existing = db.scalar(select(Group).where(Group.name == body.name, Group.id != group_id))
     if existing is not None:
-        raise HTTPException(status_code=400, detail="That location name is taken")
+        raise HTTPException(status_code=400, detail="That group name is taken")
     group.name = body.name
     db.commit()
     db.refresh(group)

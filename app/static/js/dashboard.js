@@ -95,7 +95,7 @@ function focusRestaurant(id) {
     }
 }
 
-const pickableCompanions = new Map(); // id -> user, for colleagues from other locations not yet added
+const pickableCompanions = new Map(); // id -> user, for companions from other groups not yet added
 
 function addCompanionCheckbox(u, checked) {
     const el = document.getElementById("companions");
@@ -122,7 +122,7 @@ async function loadCompanions() {
     const groups = await groupsRes.json();
     usersById = new Map(users.map((u) => [u.id, u]));
     if (users.length === 0) {
-        el.textContent = "No colleagues registered yet.";
+        el.textContent = "No companions registered yet.";
         picker.hidden = true;
         return;
     }
@@ -130,28 +130,28 @@ async function loadCompanions() {
     const defaults = new Set(me ? me.default_companion_ids : []);
     const myGroupId = me ? me.group_id : null;
 
-    // Show colleagues in the same location by default. Anyone already picked
-    // as a default companion stays visible too, even from another location,
-    // so a saved cross-location pick doesn't silently disappear.
-    const sameLocation = users.filter((u) => u.group_id === myGroupId);
-    const otherLocation = users.filter((u) => u.group_id !== myGroupId);
-    const visible = [...sameLocation, ...otherLocation.filter((u) => defaults.has(u.id))];
+    // Show companions in the same group by default. Anyone already picked
+    // as a default companion stays visible too, even from another group,
+    // so a saved cross-group pick doesn't silently disappear.
+    const sameGroup = users.filter((u) => u.group_id === myGroupId);
+    const otherGroup = users.filter((u) => u.group_id !== myGroupId);
+    const visible = [...sameGroup, ...otherGroup.filter((u) => defaults.has(u.id))];
 
     el.innerHTML = "";
     if (visible.length === 0) {
-        el.textContent = "No colleagues in your location yet — add one from another location below.";
+        el.textContent = "No companions in your group yet — add one from another group below.";
     } else {
         for (const u of visible) addCompanionCheckbox(u, defaults.has(u.id));
     }
     selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
 
     pickableCompanions.clear();
-    picker.innerHTML = '<option value="">Add a colleague from another location...</option>';
-    for (const u of otherLocation.filter((u) => !defaults.has(u.id))) {
+    picker.innerHTML = '<option value="">Add a companion from another group...</option>';
+    for (const u of otherGroup.filter((u) => !defaults.has(u.id))) {
         pickableCompanions.set(u.id, u);
         const opt = document.createElement("option");
         opt.value = u.id;
-        opt.textContent = `${u.display_name} (${groupName.get(u.group_id) || "no location"})`;
+        opt.textContent = `${u.display_name} (${groupName.get(u.group_id) || "no group"})`;
         picker.appendChild(opt);
     }
     picker.hidden = pickableCompanions.size === 0;
@@ -162,7 +162,7 @@ document.getElementById("companion-picker").addEventListener("change", (e) => {
     const id = parseInt(e.target.value, 10);
     const u = pickableCompanions.get(id);
     if (!u) return;
-    if (document.getElementById("companions").textContent === "No colleagues in your location yet — add one from another location below.") {
+    if (document.getElementById("companions").textContent === "No companions in your group yet — add one from another group below.") {
         document.getElementById("companions").innerHTML = "";
     }
     addCompanionCheckbox(u, true);
@@ -342,7 +342,7 @@ function renderRestaurantCard(r, container) {
     const companionNote = card.querySelector(".companion-rating-note");
     if (r.companion_rating != null && r.companion_rating_count > 0) {
         const n = r.companion_rating_count;
-        companionNote.textContent = `Colleagues: ${r.companion_rating.toFixed(1)} ★ (${n})`;
+        companionNote.textContent = `Companions: ${r.companion_rating.toFixed(1)} ★ (${n})`;
         companionNote.hidden = false;
     }
 

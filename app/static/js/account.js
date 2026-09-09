@@ -16,7 +16,7 @@ async function populateAccountGroupSelect() {
     accountGroupSelect.innerHTML = "";
     const noneOpt = document.createElement("option");
     noneOpt.value = "";
-    noneOpt.textContent = "No location";
+    noneOpt.textContent = "No group";
     accountGroupSelect.appendChild(noneOpt);
     for (const g of groups) {
         const opt = document.createElement("option");
@@ -27,7 +27,7 @@ async function populateAccountGroupSelect() {
     }
     const newOpt = document.createElement("option");
     newOpt.value = "__new__";
-    newOpt.textContent = "+ Add a new location...";
+    newOpt.textContent = "+ Add a new group...";
     accountGroupSelect.appendChild(newOpt);
 
     accountNewGroup.hidden = true;
