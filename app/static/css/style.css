@@ -303,6 +303,23 @@ button.secondary {
     border-top: 1px solid var(--border);
 }
 
+.rating-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.rating-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
+.companion-rating-note {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+
 .star-picker {
     font-size: 1.2rem;
     color: #ccc;

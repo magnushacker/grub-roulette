@@ -337,7 +337,15 @@ function renderRestaurantCard(r, container) {
     const starPicker = card.querySelector(".star-picker");
     const stars = starPicker.querySelectorAll("span");
     const highlight = (n) => stars.forEach((s, i) => s.classList.toggle("filled", i < n));
-    if (r.personal_rating) highlight(Math.round(r.personal_rating));
+    if (r.personal_rating) highlight(r.personal_rating);
+
+    const companionNote = card.querySelector(".companion-rating-note");
+    if (r.companion_rating != null && r.companion_rating_count > 0) {
+        const n = r.companion_rating_count;
+        companionNote.textContent = `Colleagues: ${r.companion_rating.toFixed(1)} ★ (${n})`;
+        companionNote.hidden = false;
+    }
+
     stars.forEach((s) => {
         s.addEventListener("click", async () => {
             const n = parseInt(s.dataset.star, 10);

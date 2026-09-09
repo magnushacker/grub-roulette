@@ -25,6 +25,8 @@ class RestaurantOut(BaseModel):
     maps_url: str | None
     distance_m: float | None = None
     personal_rating: float | None = None
+    companion_rating: float | None = None
+    companion_rating_count: int = 0
     combined_rating: float | None = None
 
     model_config = {"from_attributes": True}
