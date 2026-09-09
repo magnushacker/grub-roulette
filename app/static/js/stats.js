@@ -18,14 +18,10 @@ async function loadStats() {
     const s = await res.json();
     const tiles = [
         ["Users", s.total_users],
-        ["Admins", s.total_admins],
         ["Groups", s.total_groups],
-        ["Users without a group", s.users_without_group],
         ["Searches (all time)", s.total_searches],
         ["Searches (last 7 days)", s.searches_last_7_days],
         ["Visits logged", s.total_visits],
-        ["Confirmed the suggestion", s.visits_confirmed_suggested],
-        ["Logged somewhere else", s.visits_logged_elsewhere],
         ["Ratings given", s.total_ratings],
         ["Average rating", s.average_rating != null ? `${s.average_rating.toFixed(1)} ★` : "—"],
         ["Restaurants cached", s.total_restaurants_cached],
