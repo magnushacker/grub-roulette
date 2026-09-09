@@ -180,9 +180,37 @@ async function loadAccountRatings() {
     for (const entry of entries) {
         const row = document.createElement("div");
         row.className = "list-row";
-        row.innerHTML = `<span><span class="list-row-name">${entry.name}</span> <span class="list-row-address">${"★".repeat(entry.stars)}</span></span>`;
+        row.innerHTML = `<span><span class="list-row-name">${entry.name}</span> <span class="list-row-address">${entry.address}</span></span>`;
         const actions = document.createElement("div");
         actions.className = "list-row-actions";
+
+        // Clicking a star changes the rating in place (same upsert endpoint
+        // the dashboard's own star picker uses) instead of only being able
+        // to remove it and re-rate from scratch elsewhere.
+        const starPicker = document.createElement("div");
+        starPicker.className = "star-picker";
+        for (let n = 1; n <= 5; n++) {
+            const star = document.createElement("span");
+            star.dataset.star = n;
+            star.textContent = "★";
+            starPicker.appendChild(star);
+        }
+        const stars = starPicker.querySelectorAll("span");
+        const highlight = (n) => stars.forEach((s, i) => s.classList.toggle("filled", i < n));
+        highlight(entry.stars);
+        stars.forEach((s) => {
+            s.addEventListener("click", async () => {
+                const n = parseInt(s.dataset.star, 10);
+                highlight(n);
+                await fetch(`/api/restaurants/${entry.restaurant_id}/rate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stars: n }),
+                });
+            });
+        });
+        actions.appendChild(starPicker);
+
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "secondary";
