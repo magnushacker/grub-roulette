@@ -7,7 +7,6 @@ from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, Search, User
 from app.schemas import NotifyTeamsRequest, RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services import teams_notify
-from app.services.app_settings import get_app_settings
 from app.services.recommend import (
     build_candidates,
     pick_suggestion,
@@ -96,9 +95,11 @@ def notify_teams(
     if not current.can_notify_teams:
         raise HTTPException(status_code=403, detail="Teams notifications aren't enabled for your account")
 
-    webhook_url = get_app_settings(db).teams_webhook_url
+    if current.team_id is None:
+        raise HTTPException(status_code=400, detail="You're not in a team yet -- set one in your account settings")
+    webhook_url = current.team.teams_webhook_url
     if not webhook_url:
-        raise HTTPException(status_code=400, detail="No Teams webhook URL is configured yet -- set one in the admin panel")
+        raise HTTPException(status_code=400, detail="Your team doesn't have a Teams webhook configured yet -- ask an admin to set one")
 
     restaurant = db.get(Restaurant, restaurant_id)
     if restaurant is None:

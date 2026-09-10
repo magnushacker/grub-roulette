@@ -8,18 +8,17 @@ from app.deps import get_current_admin, get_current_user_optional
 from app.models import Team, User
 from app.schemas import (
     AdminResetPasswordRequest,
+    AdminTeamOut,
     AdminUserOut,
-    AppSettingsOut,
     RenameTeamRequest,
     RenameUserRequest,
     TeamOut,
-    UpdateAppSettingsRequest,
     UpdateEmailRequest,
     UpdateNotifyTeamsRequest,
     UpdateTeamRequest,
+    UpdateTeamWebhookRequest,
 )
 from app.security import hash_password
-from app.services.app_settings import get_app_settings
 from app.templates_env import templates
 
 router = APIRouter()
@@ -138,22 +137,25 @@ def set_user_notify_teams(
     return user
 
 
-@router.get("/api/admin/settings", response_model=AppSettingsOut)
-def get_settings(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
-    return get_app_settings(db)
+@router.get("/api/admin/teams", response_model=list[AdminTeamOut])
+def list_teams_admin(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    return db.scalars(select(Team).order_by(Team.name)).all()
 
 
-@router.patch("/api/admin/settings", response_model=AppSettingsOut)
-def update_settings(
-    body: UpdateAppSettingsRequest,
+@router.patch("/api/admin/teams/{team_id}/webhook", response_model=AdminTeamOut)
+def set_team_webhook(
+    team_id: int,
+    body: UpdateTeamWebhookRequest,
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    row = get_app_settings(db)
-    row.teams_webhook_url = body.teams_webhook_url or None
+    team = db.get(Team, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+    team.teams_webhook_url = body.teams_webhook_url or None
     db.commit()
-    db.refresh(row)
-    return row
+    db.refresh(team)
+    return team
 
 
 @router.patch("/api/admin/teams/{team_id}", response_model=TeamOut)
