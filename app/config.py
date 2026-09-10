@@ -20,21 +20,10 @@ class Settings(BaseSettings):
     # Comma-separated emails that are auto-promoted to admin on register/login,
     # so there's a way to get an admin account without one already existing.
     admin_emails: str = ""
-    # Power Automate (or any generic) webhook URL that POSTs a message into a
-    # Microsoft Teams channel. Single global URL for now -- this is a beta,
-    # gated to TEAMS_NOTIFY_EMAILS below, not yet a per-team admin setting.
-    teams_webhook_url: str = ""
-    # Comma-separated emails allowed to see/use the "Notify Teams" button,
-    # same shape as ADMIN_EMAILS, while this feature is still being tried out.
-    teams_notify_emails: str = ""
 
     @property
     def admin_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
-
-    @property
-    def teams_notify_email_set(self) -> set[str]:
-        return {e.strip().lower() for e in self.teams_notify_emails.split(",") if e.strip()}
 
 
 settings = Settings()

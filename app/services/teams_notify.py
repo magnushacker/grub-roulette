@@ -8,18 +8,16 @@ fields -- whichever the flow's actions pick up.
 
 import httpx
 
-from app.config import settings
-
 
 class TeamsNotifyError(RuntimeError):
     pass
 
 
-def notify(payload: dict) -> None:
-    if not settings.teams_webhook_url:
+def notify(webhook_url: str, payload: dict) -> None:
+    if not webhook_url:
         raise TeamsNotifyError("Teams webhook URL is not configured")
 
     with httpx.Client(timeout=10.0) as client:
-        resp = client.post(settings.teams_webhook_url, json=payload)
+        resp = client.post(webhook_url, json=payload)
         if resp.status_code >= 300:
             raise TeamsNotifyError(f"Teams webhook error: {resp.status_code} - {resp.text}")
