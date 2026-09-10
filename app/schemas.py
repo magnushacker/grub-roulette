@@ -73,8 +73,13 @@ class UserOut(BaseModel):
     default_lat: float | None
     default_lng: float | None
     default_radius_m: int | None
+    can_notify_teams: bool = False
 
     model_config = {"from_attributes": True}
+
+
+class NotifyTeamsRequest(BaseModel):
+    companion_ids: list[int] = Field(default_factory=list)
 
 
 class TeamOut(BaseModel):

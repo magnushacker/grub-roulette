@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, User, Visit
@@ -12,6 +13,12 @@ from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, U
 RECENT_VISIT_DAYS = 7
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+
+def _to_user_out(user: User) -> UserOut:
+    out = UserOut.model_validate(user)
+    out.can_notify_teams = bool(user.email) and user.email.lower() in settings.teams_notify_email_set
+    return out
 
 
 @router.get("", response_model=list[UserOut])
@@ -25,7 +32,7 @@ def list_users(db: Session = Depends(get_db), current: User = Depends(get_curren
 
 @router.get("/me", response_model=UserOut)
 def get_me(current: User = Depends(get_current_user)):
-    return current
+    return _to_user_out(current)
 
 
 @router.patch("/me", response_model=UserOut)

@@ -359,7 +359,8 @@ button.secondary {
 
 .r-actions a { font-size: 0.85rem; }
 
-.btn-blacklist {
+.btn-blacklist,
+.btn-notify-teams {
     background: none;
     border: 1px solid var(--border);
     padding: 4px 10px;

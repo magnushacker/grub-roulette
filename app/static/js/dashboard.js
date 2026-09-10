@@ -443,6 +443,28 @@ function renderRestaurantCard(r, container) {
         });
     });
 
+    const notifyBtn = card.querySelector(".btn-notify-teams");
+    if (me && me.can_notify_teams) {
+        notifyBtn.hidden = false;
+        notifyBtn.addEventListener("click", async () => {
+            notifyBtn.disabled = true;
+            const res = await fetch(`/api/restaurants/${r.id}/notify-teams`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ companion_ids: selectedCompanionIds }),
+            });
+            if (res.ok) {
+                notifyBtn.textContent = "Notified!";
+            } else {
+                notifyBtn.disabled = false;
+                const body = await res.json().catch(() => ({}));
+                alert(body.detail || "Failed to notify Teams.");
+            }
+        });
+    } else {
+        notifyBtn.remove();
+    }
+
     card.querySelector(".btn-blacklist").addEventListener("click", async () => {
         await fetch(`/api/restaurants/${r.id}/blacklist`, { method: "POST" });
         const m = restaurantMarkers.get(r.id);
