@@ -75,6 +75,20 @@ function teamSelectFor(user) {
     return select;
 }
 
+function notifyTeamsCheckboxFor(user) {
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = user.can_notify_teams;
+    checkbox.addEventListener("change", async () => {
+        await fetch(`/api/admin/users/${user.id}/notify-teams`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ can_notify_teams: checkbox.checked }),
+        });
+    });
+    return checkbox;
+}
+
 let currentUsers = [];
 // Matches the backend's own default order (list_users sorts by display_name).
 let userSort = { key: "display_name", dir: "asc" };
@@ -86,6 +100,7 @@ function teamNameFor(u) {
 
 function compareUsers(a, b, key) {
     if (key === "is_admin") return (a.is_admin === b.is_admin) ? 0 : a.is_admin ? 1 : -1;
+    if (key === "can_notify_teams") return (a.can_notify_teams === b.can_notify_teams) ? 0 : a.can_notify_teams ? 1 : -1;
     if (key === "created_at") return new Date(a.created_at) - new Date(b.created_at);
     if (key === "team") return teamNameFor(a).localeCompare(teamNameFor(b));
     // display_name/email -- email can be null on legacy accounts.
@@ -132,6 +147,10 @@ function renderUsersTable() {
         const adminTd = document.createElement("td");
         adminTd.textContent = u.is_admin ? "Yes" : "";
         tr.appendChild(adminTd);
+
+        const notifyTeamsTd = document.createElement("td");
+        notifyTeamsTd.appendChild(notifyTeamsCheckboxFor(u));
+        tr.appendChild(notifyTeamsTd);
 
         const joinedTd = document.createElement("td");
         // created_at is UTC but serialized without a timezone suffix, so tell
@@ -233,6 +252,22 @@ for (const th of document.querySelectorAll("#users-table th.sortable")) {
     });
 }
 
+async function loadAppSettings() {
+    const res = await fetch("/api/admin/settings");
+    const settings = await res.json();
+    document.getElementById("teams-webhook-url").value = settings.teams_webhook_url || "";
+}
+
+document.getElementById("save-teams-webhook").addEventListener("click", async () => {
+    const url = document.getElementById("teams-webhook-url").value.trim();
+    const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teams_webhook_url: url || null }),
+    });
+    alert(res.ok ? "Saved." : "Failed to save.");
+});
+
 document.getElementById("add-team").addEventListener("click", async () => {
     const input = document.getElementById("new-team-name");
     const name = input.value.trim();
@@ -250,4 +285,5 @@ document.getElementById("add-team").addEventListener("click", async () => {
 (async function init() {
     await loadTeams();
     await loadUsers();
+    await loadAppSettings();
 })();

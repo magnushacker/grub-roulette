@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, Search, User
 from app.schemas import NotifyTeamsRequest, RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services import teams_notify
+from app.services.app_settings import get_app_settings
 from app.services.recommend import (
     build_candidates,
     pick_suggestion,
@@ -93,8 +93,12 @@ def notify_teams(
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
 ):
-    if not current.email or current.email.lower() not in settings.teams_notify_email_set:
+    if not current.can_notify_teams:
         raise HTTPException(status_code=403, detail="Teams notifications aren't enabled for your account")
+
+    webhook_url = get_app_settings(db).teams_webhook_url
+    if not webhook_url:
+        raise HTTPException(status_code=400, detail="No Teams webhook URL is configured yet -- set one in the admin panel")
 
     restaurant = db.get(Restaurant, restaurant_id)
     if restaurant is None:
@@ -113,6 +117,7 @@ def notify_teams(
 
     try:
         teams_notify.notify(
+            webhook_url,
             {
                 "text": "\n".join(lines),
                 "restaurant": restaurant.name,
@@ -120,7 +125,7 @@ def notify_teams(
                 "mapsUrl": restaurant.maps_url,
                 "requestedBy": current.display_name,
                 "companions": names,
-            }
+            },
         )
     except teams_notify.TeamsNotifyError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e

@@ -50,6 +50,10 @@ class User(Base):
     default_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_radius_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Per-account opt-in to the "Notify Teams" button on restaurant cards,
+    # set by an admin from the admin panel -- see AppSettings.teams_webhook_url
+    # for where the notification actually gets sent.
+    can_notify_teams: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     team: Mapped["Team | None"] = relationship(back_populates="members")
@@ -119,6 +123,17 @@ class Search(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
+
+
+class AppSettings(Base):
+    """Single-row table (id is always 1) for small admin-editable runtime
+    settings -- things that live in the admin panel rather than .env because
+    they're meant to be changed without a redeploy."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    teams_webhook_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
 
 class Visit(Base):

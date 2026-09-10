@@ -10,12 +10,22 @@
                 <th class="sortable" data-sort="email">Email<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="team">Team<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="is_admin">Admin<span class="sort-indicator"></span></th>
+                <th class="sortable" data-sort="can_notify_teams">Notify Teams<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="created_at">Joined<span class="sort-indicator"></span></th>
                 <th></th>
             </tr>
         </thead>
         <tbody id="users-tbody"></tbody>
     </table>
+</section>
+
+<section class="panel">
+    <h2>Teams notifications</h2>
+    <p class="hint">Webhook URL for posting picks to a Microsoft Teams channel — e.g. a Power Automate flow triggered by "When a Teams webhook request is received". Only users with "Notify Teams" checked below will see the button on restaurant cards.</p>
+    <label>Webhook URL
+        <input type="text" id="teams-webhook-url" placeholder="https://...">
+    </label>
+    <button id="save-teams-webhook" class="secondary">Save</button>
 </section>
 
 <section class="panel">

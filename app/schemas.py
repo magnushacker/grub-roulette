@@ -104,9 +104,24 @@ class AdminUserOut(BaseModel):
     email_verified: bool
     is_admin: bool
     team_id: int | None
+    can_notify_teams: bool
     created_at: dt.datetime
 
     model_config = {"from_attributes": True}
+
+
+class UpdateNotifyTeamsRequest(BaseModel):
+    can_notify_teams: bool
+
+
+class AppSettingsOut(BaseModel):
+    teams_webhook_url: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class UpdateAppSettingsRequest(BaseModel):
+    teams_webhook_url: str | None = None
 
 
 class UpdateTeamRequest(BaseModel):
