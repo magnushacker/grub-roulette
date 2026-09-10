@@ -120,11 +120,17 @@ class AdminResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class SearchDayCount(BaseModel):
+    date: dt.date
+    count: int
+
+
 class StatsOut(BaseModel):
     total_users: int
     total_groups: int
     total_searches: int
     searches_last_7_days: int
+    searches_by_day: list[SearchDayCount]
     total_visits: int
     total_ratings: int
     average_rating: float | None
