@@ -110,23 +110,16 @@ def notify_teams(
         companions = list(db.scalars(select(User).where(User.id.in_(body.companion_ids))))
     names = [current.display_name] + [c.display_name for c in companions]
 
-    lines = [f"🍽️ {current.display_name} picked {restaurant.name}", restaurant.address]
+    lines = [restaurant.address]
     if len(names) > 1:
         lines.append(f"Joining: {', '.join(names)}")
-    if restaurant.maps_url:
-        lines.append(restaurant.maps_url)
 
     try:
         teams_notify.notify(
             webhook_url,
-            {
-                "text": "\n".join(lines),
-                "restaurant": restaurant.name,
-                "address": restaurant.address,
-                "mapsUrl": restaurant.maps_url,
-                "requestedBy": current.display_name,
-                "companions": names,
-            },
+            title=f"🍽️ {current.display_name} picked {restaurant.name}",
+            lines=lines,
+            action_url=restaurant.maps_url,
         )
     except teams_notify.TeamsNotifyError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
