@@ -418,6 +418,35 @@ button.secondary {
     font-weight: 600;
 }
 
+.stats-chart {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.stats-chart svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.chart-axis-label {
+    font-size: 8px;
+    fill: var(--muted);
+}
+
+.chart-tooltip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    margin-top: -6px;
+}
+
 .admin-table th.sortable {
     cursor: pointer;
     user-select: none;
