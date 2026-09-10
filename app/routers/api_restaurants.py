@@ -7,7 +7,6 @@ from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, Search, User
 from app.schemas import NotifyTeamsRequest, RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services import teams_notify
-from app.services.app_settings import get_app_settings
 from app.services.recommend import (
     build_candidates,
     pick_suggestion,
@@ -96,9 +95,11 @@ def notify_teams(
     if not current.can_notify_teams:
         raise HTTPException(status_code=403, detail="Teams notifications aren't enabled for your account")
 
-    webhook_url = get_app_settings(db).teams_webhook_url
+    if current.team_id is None:
+        raise HTTPException(status_code=400, detail="You're not in a team yet -- set one in your account settings")
+    webhook_url = current.team.teams_webhook_url
     if not webhook_url:
-        raise HTTPException(status_code=400, detail="No Teams webhook URL is configured yet -- set one in the admin panel")
+        raise HTTPException(status_code=400, detail="Your team doesn't have a Teams webhook configured yet -- ask an admin to set one")
 
     restaurant = db.get(Restaurant, restaurant_id)
     if restaurant is None:
@@ -109,23 +110,16 @@ def notify_teams(
         companions = list(db.scalars(select(User).where(User.id.in_(body.companion_ids))))
     names = [current.display_name] + [c.display_name for c in companions]
 
-    lines = [f"🍽️ {current.display_name} picked {restaurant.name}", restaurant.address]
+    lines = [restaurant.address]
     if len(names) > 1:
         lines.append(f"Joining: {', '.join(names)}")
-    if restaurant.maps_url:
-        lines.append(restaurant.maps_url)
 
     try:
         teams_notify.notify(
             webhook_url,
-            {
-                "text": "\n".join(lines),
-                "restaurant": restaurant.name,
-                "address": restaurant.address,
-                "mapsUrl": restaurant.maps_url,
-                "requestedBy": current.display_name,
-                "companions": names,
-            },
+            title=f"🍽️ {current.display_name} picked {restaurant.name}",
+            lines=lines,
+            action_url=restaurant.maps_url,
         )
     except teams_notify.TeamsNotifyError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e

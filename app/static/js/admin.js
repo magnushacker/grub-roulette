@@ -1,25 +1,45 @@
 let teams = [];
 
 async function loadTeams() {
-    const res = await fetch("/api/teams");
+    const res = await fetch("/api/admin/teams");
     teams = await res.json();
     renderTeamsList();
 }
 
 function renderTeamsList() {
-    const el = document.getElementById("teams-list");
-    el.innerHTML = "";
+    const tbody = document.getElementById("teams-tbody");
+    tbody.innerHTML = "";
     if (teams.length === 0) {
-        el.textContent = "No teams yet.";
+        tbody.innerHTML = '<tr><td colspan="3">No teams yet.</td></tr>';
         return;
     }
     for (const t of teams) {
-        const label = document.createElement("label");
-        label.textContent = t.name + " ";
+        const tr = document.createElement("tr");
+
+        const nameTd = document.createElement("td");
+        nameTd.textContent = t.name;
+        tr.appendChild(nameTd);
+
+        const webhookTd = document.createElement("td");
+        const webhookInput = document.createElement("input");
+        webhookInput.type = "text";
+        webhookInput.placeholder = "https://...";
+        webhookInput.value = t.teams_webhook_url || "";
+        webhookInput.addEventListener("change", async () => {
+            await fetch(`/api/admin/teams/${t.id}/webhook`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ teams_webhook_url: webhookInput.value.trim() || null }),
+            });
+        });
+        webhookTd.appendChild(webhookInput);
+        tr.appendChild(webhookTd);
+
+        const actionsTd = document.createElement("td");
         const rename = document.createElement("button");
         rename.type = "button";
-        rename.textContent = "✎";
-        rename.title = "Rename team";
+        rename.className = "secondary";
+        rename.textContent = "Rename";
         rename.addEventListener("click", async () => {
             const newName = prompt(`New name for "${t.name}":`, t.name);
             if (!newName || newName === t.name) return;
@@ -36,19 +56,22 @@ function renderTeamsList() {
                 alert(body.detail || "Failed to rename team.");
             }
         });
-        label.appendChild(rename);
+        actionsTd.appendChild(rename);
+
         const del = document.createElement("button");
         del.type = "button";
-        del.textContent = "×";
-        del.title = "Delete team";
+        del.className = "secondary";
+        del.textContent = "Delete";
         del.addEventListener("click", async () => {
             if (!confirm(`Delete team "${t.name}"? Members will be left without a team.`)) return;
             await fetch(`/api/admin/teams/${t.id}`, { method: "DELETE" });
             await loadTeams();
             await loadUsers();
         });
-        label.appendChild(del);
-        el.appendChild(label);
+        actionsTd.appendChild(del);
+
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
     }
 }
 
@@ -252,22 +275,6 @@ for (const th of document.querySelectorAll("#users-table th.sortable")) {
     });
 }
 
-async function loadAppSettings() {
-    const res = await fetch("/api/admin/settings");
-    const settings = await res.json();
-    document.getElementById("teams-webhook-url").value = settings.teams_webhook_url || "";
-}
-
-document.getElementById("save-teams-webhook").addEventListener("click", async () => {
-    const url = document.getElementById("teams-webhook-url").value.trim();
-    const res = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teams_webhook_url: url || null }),
-    });
-    alert(res.ok ? "Saved." : "Failed to save.");
-});
-
 document.getElementById("add-team").addEventListener("click", async () => {
     const input = document.getElementById("new-team-name");
     const name = input.value.trim();
@@ -285,5 +292,4 @@ document.getElementById("add-team").addEventListener("click", async () => {
 (async function init() {
     await loadTeams();
     await loadUsers();
-    await loadAppSettings();
 })();

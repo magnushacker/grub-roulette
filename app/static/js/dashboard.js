@@ -454,11 +454,11 @@ function renderRestaurantCard(r, container) {
                 body: JSON.stringify({ companion_ids: selectedCompanionIds }),
             });
             if (res.ok) {
-                notifyBtn.textContent = "Notified!";
+                notifyBtn.textContent = "Suggested!";
             } else {
                 notifyBtn.disabled = false;
                 const body = await res.json().catch(() => ({}));
-                alert(body.detail || "Failed to notify Teams.");
+                alert(body.detail || "Failed to suggest to team.");
             }
         });
     } else {

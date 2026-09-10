@@ -89,6 +89,21 @@ class TeamOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminTeamOut(BaseModel):
+    id: int
+    name: str
+    # Admin-only view of a team -- deliberately not on the public TeamOut
+    # (used by GET /api/teams for the companion picker), since the webhook
+    # URL's query string is itself the auth secret for posting to it.
+    teams_webhook_url: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class UpdateTeamWebhookRequest(BaseModel):
+    teams_webhook_url: str | None = None
+
+
 class TeamCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=128)
 
@@ -112,16 +127,6 @@ class AdminUserOut(BaseModel):
 
 class UpdateNotifyTeamsRequest(BaseModel):
     can_notify_teams: bool
-
-
-class AppSettingsOut(BaseModel):
-    teams_webhook_url: str | None
-
-    model_config = {"from_attributes": True}
-
-
-class UpdateAppSettingsRequest(BaseModel):
-    teams_webhook_url: str | None = None
 
 
 class UpdateTeamRequest(BaseModel):
