@@ -18,7 +18,7 @@ async function loadStats() {
     const s = await res.json();
     const tiles = [
         ["Users", s.total_users],
-        ["Groups", s.total_groups],
+        ["Teams", s.total_teams],
         ["Searches (all time)", s.total_searches],
         ["Searches (last 7 days)", s.searches_last_7_days],
         ["Visits logged", s.total_visits],

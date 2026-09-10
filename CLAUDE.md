@@ -93,12 +93,12 @@ against the comma-separated `ADMIN_EMAILS` setting (`_sync_admin_status` in
 `app/routers/auth.py`, called on every login/registration) — this is the only way
 to bootstrap the first admin. Admins get an `/admin` console
 (`app/routers/admin.py` + `admin.html`/`admin.js`) for renaming/deleting users,
-resetting passwords, and managing groups (offices/locations), all under
+resetting passwords, and managing teams (offices/locations), all under
 `get_current_admin`.
 
-**Groups** (`app/services/groups.py`) are just named locations users belong to,
-used only to sort the companion list in `GET /api/users` (same-group colleagues
-first) — no other behavior depends on group membership.
+**Teams** (`app/services/teams.py`) are just named locations users belong to,
+used only to sort the companion list in `GET /api/users` (same-team colleagues
+first) — no other behavior depends on team membership.
 
 **Data model** (`app/models.py`): `User` — `Restaurant` is a many-to-many-ish hub
 joined by `Rating`, `Blacklist`, and `Visit`, each scoped to a single user +

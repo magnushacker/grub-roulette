@@ -14,8 +14,38 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db() -> None:
     from app import models  # noqa: F401  (ensure models are registered on Base)
 
+    _apply_renames()
     Base.metadata.create_all(bind=engine)
     _add_missing_columns()
+
+
+# Renames this codebase has made to already-deployed tables/columns, oldest
+# first. Same problem as _add_missing_columns below: there's no migration
+# framework and the app auto-deploys straight onto the persisted database.
+# Without these, create_all() just makes a fresh empty table next to the
+# populated one under its old name and the old rows are silently orphaned.
+_TABLE_RENAMES = [("groups", "teams")]
+_COLUMN_RENAMES = [("users", "group_id", "team_id")]
+
+
+def _apply_renames() -> None:
+    """Run before create_all() so the renamed table is what create_all() then
+    sees as already existing. Each rename is skipped once the new name is in
+    place, so this is a no-op on a fresh database and on every deploy after
+    the one that first applies it."""
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for old_name, new_name in _TABLE_RENAMES:
+            if inspector.has_table(old_name) and not inspector.has_table(new_name):
+                # SQLite (3.25+) rewrites other tables' foreign keys to point
+                # at the new name for us; Postgres keeps them by table oid.
+                conn.execute(text(f"ALTER TABLE {old_name} RENAME TO {new_name}"))
+        for table, old_column, new_column in _COLUMN_RENAMES:
+            if not inspector.has_table(table):
+                continue
+            existing = {col["name"] for col in inspector.get_columns(table)}
+            if old_column in existing and new_column not in existing:
+                conn.execute(text(f'ALTER TABLE {table} RENAME COLUMN "{old_column}" TO "{new_column}"'))
 
 
 def _default_value(column):

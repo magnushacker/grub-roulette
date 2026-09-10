@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import Blacklist, Group, Rating, Restaurant, Search, User, Visit
+from app.models import Blacklist, Rating, Restaurant, Search, Team, User, Visit
 from app.schemas import StatsOut
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -23,7 +23,7 @@ def get_stats(db: Session = Depends(get_db), current: User = Depends(get_current
     week_ago = dt.datetime.utcnow() - dt.timedelta(days=7)
     return StatsOut(
         total_users=count(User),
-        total_groups=count(Group),
+        total_teams=count(Team),
         total_searches=count(Search),
         searches_last_7_days=count(Search, Search.created_at >= week_ago),
         total_visits=count(Visit),

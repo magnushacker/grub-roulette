@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, User, Visit
-from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, UpdateGroupRequest, UserOut, VisitEntryOut
+from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, UpdateTeamRequest, UserOut, VisitEntryOut
 
 RECENT_VISIT_DAYS = 7
 
@@ -18,8 +18,8 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 def list_users(db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     users = db.scalars(select(User).order_by(User.display_name)).all()
     others = [u for u in users if u.id != current.id]
-    if current.group_id is not None:
-        others.sort(key=lambda u: u.group_id != current.group_id)
+    if current.team_id is not None:
+        others.sort(key=lambda u: u.team_id != current.team_id)
     return others
 
 
@@ -45,9 +45,9 @@ def update_preferences(body: PreferencesRequest, db: Session = Depends(get_db), 
     return current
 
 
-@router.patch("/me/group", response_model=UserOut)
-def update_my_group(body: UpdateGroupRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
-    current.group_id = body.group_id
+@router.patch("/me/team", response_model=UserOut)
+def update_my_team(body: UpdateTeamRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    current.team_id = body.team_id
     db.commit()
     db.refresh(current)
     return current
