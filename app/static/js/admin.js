@@ -1,50 +1,50 @@
-let groups = [];
+let teams = [];
 
-async function loadGroups() {
-    const res = await fetch("/api/groups");
-    groups = await res.json();
-    renderGroupsList();
+async function loadTeams() {
+    const res = await fetch("/api/teams");
+    teams = await res.json();
+    renderTeamsList();
 }
 
-function renderGroupsList() {
-    const el = document.getElementById("groups-list");
+function renderTeamsList() {
+    const el = document.getElementById("teams-list");
     el.innerHTML = "";
-    if (groups.length === 0) {
-        el.textContent = "No groups yet.";
+    if (teams.length === 0) {
+        el.textContent = "No teams yet.";
         return;
     }
-    for (const g of groups) {
+    for (const t of teams) {
         const label = document.createElement("label");
-        label.textContent = g.name + " ";
+        label.textContent = t.name + " ";
         const rename = document.createElement("button");
         rename.type = "button";
         rename.textContent = "✎";
-        rename.title = "Rename group";
+        rename.title = "Rename team";
         rename.addEventListener("click", async () => {
-            const newName = prompt(`New name for "${g.name}":`, g.name);
-            if (!newName || newName === g.name) return;
-            const res = await fetch(`/api/admin/groups/${g.id}`, {
+            const newName = prompt(`New name for "${t.name}":`, t.name);
+            if (!newName || newName === t.name) return;
+            const res = await fetch(`/api/admin/teams/${t.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: newName }),
             });
             if (res.ok) {
-                await loadGroups();
+                await loadTeams();
                 await loadUsers();
             } else {
                 const body = await res.json().catch(() => ({}));
-                alert(body.detail || "Failed to rename group.");
+                alert(body.detail || "Failed to rename team.");
             }
         });
         label.appendChild(rename);
         const del = document.createElement("button");
         del.type = "button";
         del.textContent = "×";
-        del.title = "Delete group";
+        del.title = "Delete team";
         del.addEventListener("click", async () => {
-            if (!confirm(`Delete group "${g.name}"? Members will be left without a group.`)) return;
-            await fetch(`/api/admin/groups/${g.id}`, { method: "DELETE" });
-            await loadGroups();
+            if (!confirm(`Delete team "${t.name}"? Members will be left without a team.`)) return;
+            await fetch(`/api/admin/teams/${t.id}`, { method: "DELETE" });
+            await loadTeams();
             await loadUsers();
         });
         label.appendChild(del);
@@ -52,24 +52,24 @@ function renderGroupsList() {
     }
 }
 
-function groupSelectFor(user) {
+function teamSelectFor(user) {
     const select = document.createElement("select");
     const noneOpt = document.createElement("option");
     noneOpt.value = "";
-    noneOpt.textContent = "No group";
+    noneOpt.textContent = "No team";
     select.appendChild(noneOpt);
-    for (const g of groups) {
+    for (const t of teams) {
         const opt = document.createElement("option");
-        opt.value = g.id;
-        opt.textContent = g.name;
-        if (user.group_id === g.id) opt.selected = true;
+        opt.value = t.id;
+        opt.textContent = t.name;
+        if (user.team_id === t.id) opt.selected = true;
         select.appendChild(opt);
     }
     select.addEventListener("change", async () => {
-        await fetch(`/api/admin/users/${user.id}/group`, {
+        await fetch(`/api/admin/users/${user.id}/team`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ group_id: select.value ? parseInt(select.value, 10) : null }),
+            body: JSON.stringify({ team_id: select.value ? parseInt(select.value, 10) : null }),
         });
     });
     return select;
@@ -79,15 +79,15 @@ let currentUsers = [];
 // Matches the backend's own default order (list_users sorts by display_name).
 let userSort = { key: "display_name", dir: "asc" };
 
-function groupNameFor(u) {
-    const g = groups.find((g) => g.id === u.group_id);
-    return g ? g.name : "No group";
+function teamNameFor(u) {
+    const t = teams.find((t) => t.id === u.team_id);
+    return t ? t.name : "No team";
 }
 
 function compareUsers(a, b, key) {
     if (key === "is_admin") return (a.is_admin === b.is_admin) ? 0 : a.is_admin ? 1 : -1;
     if (key === "created_at") return new Date(a.created_at) - new Date(b.created_at);
-    if (key === "group") return groupNameFor(a).localeCompare(groupNameFor(b));
+    if (key === "team") return teamNameFor(a).localeCompare(teamNameFor(b));
     // display_name/email -- email can be null on legacy accounts.
     return (a[key] || "").localeCompare(b[key] || "");
 }
@@ -125,9 +125,9 @@ function renderUsersTable() {
         emailTd.textContent = u.email ? `${u.email} ${u.email_verified ? "" : "(unverified)"}`.trim() : "—";
         tr.appendChild(emailTd);
 
-        const groupTd = document.createElement("td");
-        groupTd.appendChild(groupSelectFor(u));
-        tr.appendChild(groupTd);
+        const teamTd = document.createElement("td");
+        teamTd.appendChild(teamSelectFor(u));
+        tr.appendChild(teamTd);
 
         const adminTd = document.createElement("td");
         adminTd.textContent = u.is_admin ? "Yes" : "";
@@ -233,21 +233,21 @@ for (const th of document.querySelectorAll("#users-table th.sortable")) {
     });
 }
 
-document.getElementById("add-group").addEventListener("click", async () => {
-    const input = document.getElementById("new-group-name");
+document.getElementById("add-team").addEventListener("click", async () => {
+    const input = document.getElementById("new-team-name");
     const name = input.value.trim();
     if (!name) return;
-    await fetch("/api/groups", {
+    await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
     });
     input.value = "";
-    await loadGroups();
+    await loadTeams();
     await loadUsers();
 });
 
 (async function init() {
-    await loadGroups();
+    await loadTeams();
     await loadUsers();
 })();

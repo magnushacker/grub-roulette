@@ -1,44 +1,44 @@
 const accountModal = document.getElementById("account-modal");
-const accountGroupSelect = document.getElementById("account-group-select");
-const accountNewGroup = document.getElementById("account-new-group");
-const accountNewGroupName = document.getElementById("account-new-group-name");
+const accountTeamSelect = document.getElementById("account-team-select");
+const accountNewTeam = document.getElementById("account-new-team");
+const accountNewTeamName = document.getElementById("account-new-team-name");
 
 // Populated fresh each time the modal opens, and reused when saving cuisine
 // picks so that PATCH -- which replaces every preference field at once --
 // doesn't clobber default_companion_ids/default_lat/lng/radius with defaults.
 let accountMe = null;
 
-async function populateAccountGroupSelect() {
-    const [groupsRes, meRes] = await Promise.all([fetch("/api/groups"), fetch("/api/users/me")]);
-    const groups = await groupsRes.json();
+async function populateAccountTeamSelect() {
+    const [teamsRes, meRes] = await Promise.all([fetch("/api/teams"), fetch("/api/users/me")]);
+    const teams = await teamsRes.json();
     accountMe = await meRes.json();
 
-    accountGroupSelect.innerHTML = "";
+    accountTeamSelect.innerHTML = "";
     const noneOpt = document.createElement("option");
     noneOpt.value = "";
-    noneOpt.textContent = "No group";
-    accountGroupSelect.appendChild(noneOpt);
-    for (const g of groups) {
+    noneOpt.textContent = "No team";
+    accountTeamSelect.appendChild(noneOpt);
+    for (const t of teams) {
         const opt = document.createElement("option");
-        opt.value = g.id;
-        opt.textContent = g.name;
-        if (accountMe.group_id === g.id) opt.selected = true;
-        accountGroupSelect.appendChild(opt);
+        opt.value = t.id;
+        opt.textContent = t.name;
+        if (accountMe.team_id === t.id) opt.selected = true;
+        accountTeamSelect.appendChild(opt);
     }
     const newOpt = document.createElement("option");
     newOpt.value = "__new__";
-    newOpt.textContent = "+ Add a new group...";
-    accountGroupSelect.appendChild(newOpt);
+    newOpt.textContent = "+ Add a new team...";
+    accountTeamSelect.appendChild(newOpt);
 
-    accountNewGroup.hidden = true;
-    accountNewGroupName.value = "";
+    accountNewTeam.hidden = true;
+    accountNewTeamName.value = "";
 }
 
-async function saveAccountGroup(groupId) {
-    await fetch("/api/users/me/group", {
+async function saveAccountTeam(teamId) {
+    await fetch("/api/users/me/team", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ group_id: groupId }),
+        body: JSON.stringify({ team_id: teamId }),
     });
 }
 
@@ -108,31 +108,31 @@ function loadAccountCuisines() {
     }
 }
 
-accountGroupSelect.addEventListener("change", () => {
-    const value = accountGroupSelect.value;
-    accountNewGroup.hidden = value !== "__new__";
-    // "__new__" isn't a real group yet -- nothing to save until it's created
-    // (see account-create-group below), which is also when it gets selected.
-    if (value !== "__new__") saveAccountGroup(value ? parseInt(value, 10) : null);
+accountTeamSelect.addEventListener("change", () => {
+    const value = accountTeamSelect.value;
+    accountNewTeam.hidden = value !== "__new__";
+    // "__new__" isn't a real team yet -- nothing to save until it's created
+    // (see account-create-team below), which is also when it gets selected.
+    if (value !== "__new__") saveAccountTeam(value ? parseInt(value, 10) : null);
 });
 
-document.getElementById("account-create-group").addEventListener("click", async () => {
-    const name = accountNewGroupName.value.trim();
+document.getElementById("account-create-team").addEventListener("click", async () => {
+    const name = accountNewTeamName.value.trim();
     if (!name) return;
-    const res = await fetch("/api/groups", {
+    const res = await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
     });
-    const group = await res.json();
+    const team = await res.json();
     const opt = document.createElement("option");
-    opt.value = group.id;
-    opt.textContent = group.name;
+    opt.value = team.id;
+    opt.textContent = team.name;
     opt.selected = true;
-    accountGroupSelect.insertBefore(opt, accountGroupSelect.querySelector('option[value="__new__"]'));
-    accountNewGroup.hidden = true;
+    accountTeamSelect.insertBefore(opt, accountTeamSelect.querySelector('option[value="__new__"]'));
+    accountNewTeam.hidden = true;
     // Selecting the option above programmatically doesn't fire "change".
-    await saveAccountGroup(group.id);
+    await saveAccountTeam(team.id);
 });
 
 document.getElementById("account-cancel").addEventListener("click", () => {
@@ -368,7 +368,7 @@ document.getElementById("account-visit-search").addEventListener("input", (e) =>
 });
 
 document.getElementById("open-account-modal").addEventListener("click", async () => {
-    await populateAccountGroupSelect();
+    await populateAccountTeamSelect();
     loadAccountCuisines();
     loadAccountBlacklist();
     loadAccountRatings();

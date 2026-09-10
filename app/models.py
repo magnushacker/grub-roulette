@@ -17,13 +17,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db_base import Base
 
 
-class Group(Base):
-    __tablename__ = "groups"
+class Team(Base):
+    __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128), unique=True)
 
-    members: Mapped[list["User"]] = relationship(back_populates="group")
+    members: Mapped[list["User"]] = relationship(back_populates="team")
 
 
 class User(Base):
@@ -39,7 +39,7 @@ class User(Base):
     email_verified: Mapped[bool] = mapped_column(default=True)
     verification_token: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
     verification_sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime, nullable=True)
-    group_id: Mapped[int | None] = mapped_column(ForeignKey("groups.id"), nullable=True)
+    team_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"), nullable=True)
     disliked_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
     preferred_cuisines: Mapped[list[str]] = mapped_column(JSON, default=list)
     # Every cuisine this user has ever had turn up in a nearby/text search
@@ -52,7 +52,7 @@ class User(Base):
     default_radius_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
-    group: Mapped["Group | None"] = relationship(back_populates="members")
+    team: Mapped["Team | None"] = relationship(back_populates="members")
     ratings: Mapped[list["Rating"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     blacklist_entries: Mapped[list["Blacklist"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     visits: Mapped[list["Visit"]] = relationship(back_populates="user", cascade="all, delete-orphan")

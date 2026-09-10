@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.models import Group, User
+from app.models import Team, User
 from app.security import hash_password, verify_password
 from app.services.email import EmailError, send_verification_email
-from app.services.groups import get_or_create_group
+from app.services.teams import get_or_create_team
 from app.templates_env import templates
 
 router = APIRouter()
@@ -85,8 +85,8 @@ def resend_verification(request: Request, email: str = Form(...), db: Session = 
 
 @router.get("/register")
 def register_page(request: Request, db: Session = Depends(get_db)):
-    groups = db.scalars(select(Group).order_by(Group.name)).all()
-    return templates.TemplateResponse("register.html", {"request": request, "error": None, "groups": groups})
+    teams = db.scalars(select(Team).order_by(Team.name)).all()
+    return templates.TemplateResponse("register.html", {"request": request, "error": None, "teams": teams})
 
 
 @router.post("/register")
@@ -95,37 +95,37 @@ def register_submit(
     display_name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
-    group_id: str = Form(""),
-    new_group_name: str = Form(""),
+    team_id: str = Form(""),
+    new_team_name: str = Form(""),
     db: Session = Depends(get_db),
 ):
-    groups = db.scalars(select(Group).order_by(Group.name)).all()
+    teams = db.scalars(select(Team).order_by(Team.name)).all()
     existing = db.scalar(select(User).where(func.lower(User.display_name) == display_name.lower()))
     if existing is not None:
         return templates.TemplateResponse(
-            "register.html", {"request": request, "error": "That name is taken", "groups": groups}, status_code=400
+            "register.html", {"request": request, "error": "That name is taken", "teams": teams}, status_code=400
         )
     existing_email = db.scalar(select(User).where(func.lower(User.email) == email.lower()))
     if existing_email is not None:
         return templates.TemplateResponse(
             "register.html",
-            {"request": request, "error": "That email is already registered", "groups": groups},
+            {"request": request, "error": "That email is already registered", "teams": teams},
             status_code=400,
         )
 
-    resolved_group_id: int | None
-    if group_id == "__new__" and new_group_name.strip():
-        resolved_group_id = get_or_create_group(db, new_group_name).id
-    elif group_id and group_id != "__new__":
-        resolved_group_id = int(group_id)
+    resolved_team_id: int | None
+    if team_id == "__new__" and new_team_name.strip():
+        resolved_team_id = get_or_create_team(db, new_team_name).id
+    elif team_id and team_id != "__new__":
+        resolved_team_id = int(team_id)
     else:
-        resolved_group_id = None
+        resolved_team_id = None
 
     user = User(
         display_name=display_name,
         email=email,
         password_hash=hash_password(password),
-        group_id=resolved_group_id,
+        team_id=resolved_team_id,
         email_verified=not settings.require_email_verification,
     )
     db.add(user)

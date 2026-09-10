@@ -65,7 +65,7 @@ class PreferencesRequest(BaseModel):
 class UserOut(BaseModel):
     id: int
     display_name: str
-    group_id: int | None
+    team_id: int | None
     disliked_cuisines: list[str]
     preferred_cuisines: list[str]
     seen_cuisines: list[str]
@@ -77,18 +77,18 @@ class UserOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class GroupOut(BaseModel):
+class TeamOut(BaseModel):
     id: int
     name: str
 
     model_config = {"from_attributes": True}
 
 
-class GroupCreateRequest(BaseModel):
+class TeamCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=128)
 
 
-class RenameGroupRequest(BaseModel):
+class RenameTeamRequest(BaseModel):
     name: str = Field(min_length=1, max_length=128)
 
 
@@ -98,14 +98,14 @@ class AdminUserOut(BaseModel):
     email: str | None
     email_verified: bool
     is_admin: bool
-    group_id: int | None
+    team_id: int | None
     created_at: dt.datetime
 
     model_config = {"from_attributes": True}
 
 
-class UpdateGroupRequest(BaseModel):
-    group_id: int | None = None
+class UpdateTeamRequest(BaseModel):
+    team_id: int | None = None
 
 
 class RenameUserRequest(BaseModel):
@@ -127,7 +127,7 @@ class SearchDayCount(BaseModel):
 
 class StatsOut(BaseModel):
     total_users: int
-    total_groups: int
+    total_teams: int
     total_searches: int
     searches_last_7_days: int
     searches_by_day: list[SearchDayCount]

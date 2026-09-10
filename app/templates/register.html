@@ -8,28 +8,28 @@
         <label>Name<input type="text" name="display_name" required autofocus></label>
         <label>Email<input type="email" name="email" required></label>
         <label>Password<input type="password" name="password" required></label>
-        <label>Group
-            <select name="group_id" id="group-select">
-                <option value="">No group</option>
-                {% for g in groups %}
-                <option value="{{ g.id }}">{{ g.name }}</option>
+        <label>Team
+            <select name="team_id" id="team-select">
+                <option value="">No team</option>
+                {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
                 {% endfor %}
-                <option value="__new__">+ Add a new group...</option>
+                <option value="__new__">+ Add a new team...</option>
             </select>
         </label>
-        <p class="hint">This is your team or office — it's what lets you quickly pick your usual lunch companions later. You can change it anytime from your account settings.</p>
-        <label id="new-group-label" hidden>New group name
-            <input type="text" name="new_group_name" id="new-group-name">
+        <p class="hint">Your team or office — it's what lets you quickly pick your usual lunch companions later. You can change it anytime from your account settings.</p>
+        <label id="new-team-label" hidden>New team name
+            <input type="text" name="new_team_name" id="new-team-name">
         </label>
         <button type="submit">Create account</button>
     </form>
     <p>Already have an account? <a href="/login">Log in</a></p>
 </div>
 <script>
-    const groupSelect = document.getElementById("group-select");
-    const newGroupLabel = document.getElementById("new-group-label");
-    groupSelect.addEventListener("change", () => {
-        newGroupLabel.hidden = groupSelect.value !== "__new__";
+    const teamSelect = document.getElementById("team-select");
+    const newTeamLabel = document.getElementById("new-team-label");
+    teamSelect.addEventListener("change", () => {
+        newTeamLabel.hidden = teamSelect.value !== "__new__";
     });
 </script>
 {% endblock %}

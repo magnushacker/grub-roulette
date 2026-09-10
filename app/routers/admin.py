@@ -5,15 +5,15 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_admin, get_current_user_optional
-from app.models import Group, User
+from app.models import Team, User
 from app.schemas import (
     AdminResetPasswordRequest,
     AdminUserOut,
-    GroupOut,
-    RenameGroupRequest,
+    RenameTeamRequest,
     RenameUserRequest,
+    TeamOut,
     UpdateEmailRequest,
-    UpdateGroupRequest,
+    UpdateTeamRequest,
 )
 from app.security import hash_password
 from app.templates_env import templates
@@ -100,49 +100,49 @@ def reset_password(
     db.commit()
 
 
-@router.patch("/api/admin/users/{user_id}/group", response_model=AdminUserOut)
-def set_user_group(
+@router.patch("/api/admin/users/{user_id}/team", response_model=AdminUserOut)
+def set_user_team(
     user_id: int,
-    body: UpdateGroupRequest,
+    body: UpdateTeamRequest,
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    if body.group_id is not None and db.get(Group, body.group_id) is None:
-        raise HTTPException(status_code=404, detail="Group not found")
-    user.group_id = body.group_id
+    if body.team_id is not None and db.get(Team, body.team_id) is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+    user.team_id = body.team_id
     db.commit()
     db.refresh(user)
     return user
 
 
-@router.patch("/api/admin/groups/{group_id}", response_model=GroupOut)
-def rename_group(
-    group_id: int,
-    body: RenameGroupRequest,
+@router.patch("/api/admin/teams/{team_id}", response_model=TeamOut)
+def rename_team(
+    team_id: int,
+    body: RenameTeamRequest,
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    group = db.get(Group, group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Group not found")
-    existing = db.scalar(select(Group).where(Group.name == body.name, Group.id != group_id))
+    team = db.get(Team, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+    existing = db.scalar(select(Team).where(Team.name == body.name, Team.id != team_id))
     if existing is not None:
-        raise HTTPException(status_code=400, detail="That group name is taken")
-    group.name = body.name
+        raise HTTPException(status_code=400, detail="That team name is taken")
+    team.name = body.name
     db.commit()
-    db.refresh(group)
-    return group
+    db.refresh(team)
+    return team
 
 
-@router.delete("/api/admin/groups/{group_id}", status_code=204)
-def delete_group(group_id: int, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
-    group = db.get(Group, group_id)
-    if group is None:
-        raise HTTPException(status_code=404, detail="Group not found")
-    for member in group.members:
-        member.group_id = None
-    db.delete(group)
+@router.delete("/api/admin/teams/{team_id}", status_code=204)
+def delete_team(team_id: int, db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    team = db.get(Team, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+    for member in team.members:
+        member.team_id = None
+    db.delete(team)
     db.commit()

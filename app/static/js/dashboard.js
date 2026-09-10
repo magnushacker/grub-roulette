@@ -122,8 +122,8 @@ function focusRestaurant(id) {
     }
 }
 
-const pickableCompanions = new Map(); // id -> user, for companions from other groups not yet added
-let groupNameById = new Map(); // group id -> group name, for the group-picker's option labels
+const pickableCompanions = new Map(); // id -> user, for companions from other teams not yet added
+let teamNameById = new Map(); // team id -> team name, for the team-picker's option labels
 
 function addCompanionCheckbox(u, checked) {
     const el = document.getElementById("companions");
@@ -142,35 +142,35 @@ function addCompanionCheckbox(u, checked) {
     el.appendChild(label);
 }
 
-// Key used to bucket pickableCompanions by group in the cascading picker
-// below -- group ids are numbers, so "" (rather than "null"/"0") is the one
-// value a real group id can never collide with.
-function groupKeyFor(u) {
-    return u.group_id == null ? "" : String(u.group_id);
+// Key used to bucket pickableCompanions by team in the cascading picker
+// below -- team ids are numbers, so "" (rather than "null"/"0") is the one
+// value a real team id can never collide with.
+function teamKeyFor(u) {
+    return u.team_id == null ? "" : String(u.team_id);
 }
 
-// Two-step "add a companion": pick a group, then a name from within it.
-// Rebuilt from the current pickableCompanions after every add so a group
+// Two-step "add a companion": pick a team, then a name from within it.
+// Rebuilt from the current pickableCompanions after every add so a team
 // that's been fully picked from disappears from the first dropdown too.
 function refreshCompanionPickers() {
-    const groupPicker = document.getElementById("companion-group-picker");
+    const teamPicker = document.getElementById("companion-team-picker");
     const namePicker = document.getElementById("companion-name-picker");
 
-    const groupKeys = new Set(Array.from(pickableCompanions.values()).map(groupKeyFor));
-    const sortedKeys = Array.from(groupKeys).sort((a, b) =>
-        (a === "" ? "No group" : groupNameById.get(parseInt(a, 10)) || "No group").localeCompare(
-            b === "" ? "No group" : groupNameById.get(parseInt(b, 10)) || "No group"
+    const teamKeys = new Set(Array.from(pickableCompanions.values()).map(teamKeyFor));
+    const sortedKeys = Array.from(teamKeys).sort((a, b) =>
+        (a === "" ? "No team" : teamNameById.get(parseInt(a, 10)) || "No team").localeCompare(
+            b === "" ? "No team" : teamNameById.get(parseInt(b, 10)) || "No team"
         )
     );
 
-    groupPicker.innerHTML = '<option value="">Add a companion from a group...</option>';
+    teamPicker.innerHTML = '<option value="">Add a companion from a team...</option>';
     for (const key of sortedKeys) {
         const opt = document.createElement("option");
         opt.value = key;
-        opt.textContent = key === "" ? "No group" : groupNameById.get(parseInt(key, 10)) || "No group";
-        groupPicker.appendChild(opt);
+        opt.textContent = key === "" ? "No team" : teamNameById.get(parseInt(key, 10)) || "No team";
+        teamPicker.appendChild(opt);
     }
-    groupPicker.hidden = sortedKeys.length === 0;
+    teamPicker.hidden = sortedKeys.length === 0;
 
     namePicker.hidden = true;
     namePicker.innerHTML = '<option value="">Choose a name...</option>';
@@ -178,46 +178,46 @@ function refreshCompanionPickers() {
 
 async function loadCompanions() {
     const el = document.getElementById("companions");
-    const groupPicker = document.getElementById("companion-group-picker");
+    const teamPicker = document.getElementById("companion-team-picker");
     const namePicker = document.getElementById("companion-name-picker");
-    const [usersRes, groupsRes] = await Promise.all([fetch("/api/users"), fetch("/api/groups")]);
+    const [usersRes, teamsRes] = await Promise.all([fetch("/api/users"), fetch("/api/teams")]);
     const users = await usersRes.json();
-    const groups = await groupsRes.json();
+    const teams = await teamsRes.json();
     usersById = new Map(users.map((u) => [u.id, u]));
     if (users.length === 0) {
         el.textContent = "No companions registered yet.";
-        groupPicker.hidden = true;
+        teamPicker.hidden = true;
         namePicker.hidden = true;
         return;
     }
-    groupNameById = new Map(groups.map((g) => [g.id, g.name]));
+    teamNameById = new Map(teams.map((t) => [t.id, t.name]));
     const defaults = new Set(me ? me.default_companion_ids : []);
-    const myGroupId = me ? me.group_id : null;
+    const myTeamId = me ? me.team_id : null;
 
-    // Show companions in the same group by default. Anyone already picked
-    // as a default companion stays visible too, even from another group,
-    // so a saved cross-group pick doesn't silently disappear.
-    const sameGroup = users.filter((u) => u.group_id === myGroupId);
-    const otherGroup = users.filter((u) => u.group_id !== myGroupId);
-    const visible = [...sameGroup, ...otherGroup.filter((u) => defaults.has(u.id))];
+    // Show companions in the same team by default. Anyone already picked
+    // as a default companion stays visible too, even from another team,
+    // so a saved cross-team pick doesn't silently disappear.
+    const sameTeam = users.filter((u) => u.team_id === myTeamId);
+    const otherTeam = users.filter((u) => u.team_id !== myTeamId);
+    const visible = [...sameTeam, ...otherTeam.filter((u) => defaults.has(u.id))];
 
     el.innerHTML = "";
     if (visible.length === 0) {
-        el.textContent = "No companions in your group yet — add one from another group below.";
+        el.textContent = "No companions in your team yet — add one from another team below.";
     } else {
         for (const u of visible) addCompanionCheckbox(u, defaults.has(u.id));
     }
     selectedCompanionIds = Array.from(el.querySelectorAll("input:checked")).map((c) => parseInt(c.value, 10));
 
     pickableCompanions.clear();
-    for (const u of otherGroup.filter((u) => !defaults.has(u.id))) {
+    for (const u of otherTeam.filter((u) => !defaults.has(u.id))) {
         pickableCompanions.set(u.id, u);
     }
     refreshCompanionPickers();
     refreshCuisineChips();
 }
 
-document.getElementById("companion-group-picker").addEventListener("change", (e) => {
+document.getElementById("companion-team-picker").addEventListener("change", (e) => {
     const namePicker = document.getElementById("companion-name-picker");
     const key = e.target.value;
     namePicker.innerHTML = '<option value="">Choose a name...</option>';
@@ -226,7 +226,7 @@ document.getElementById("companion-group-picker").addEventListener("change", (e)
         return;
     }
     const names = Array.from(pickableCompanions.values())
-        .filter((u) => groupKeyFor(u) === key)
+        .filter((u) => teamKeyFor(u) === key)
         .sort((a, b) => a.display_name.localeCompare(b.display_name));
     for (const u of names) {
         const opt = document.createElement("option");
@@ -241,12 +241,12 @@ document.getElementById("companion-name-picker").addEventListener("change", (e) 
     const id = parseInt(e.target.value, 10);
     const u = pickableCompanions.get(id);
     if (!u) return;
-    if (document.getElementById("companions").textContent === "No companions in your group yet — add one from another group below.") {
+    if (document.getElementById("companions").textContent === "No companions in your team yet — add one from another team below.") {
         document.getElementById("companions").innerHTML = "";
     }
     addCompanionCheckbox(u, true);
     pickableCompanions.delete(id);
-    document.getElementById("companion-group-picker").value = "";
+    document.getElementById("companion-team-picker").value = "";
     refreshCompanionPickers();
     selectedCompanionIds = Array.from(document.querySelectorAll("#companions input:checked")).map((c) => parseInt(c.value, 10));
     refreshCuisineChips();
