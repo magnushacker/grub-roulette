@@ -73,13 +73,8 @@ class UserOut(BaseModel):
     default_lat: float | None
     default_lng: float | None
     default_radius_m: int | None
-    can_notify_teams: bool = False
 
     model_config = {"from_attributes": True}
-
-
-class NotifyTeamsRequest(BaseModel):
-    companion_ids: list[int] = Field(default_factory=list)
 
 
 class TeamOut(BaseModel):
@@ -87,21 +82,6 @@ class TeamOut(BaseModel):
     name: str
 
     model_config = {"from_attributes": True}
-
-
-class AdminTeamOut(BaseModel):
-    id: int
-    name: str
-    # Admin-only view of a team -- deliberately not on the public TeamOut
-    # (used by GET /api/teams for the companion picker), since the webhook
-    # URL's query string is itself the auth secret for posting to it.
-    teams_webhook_url: str | None
-
-    model_config = {"from_attributes": True}
-
-
-class UpdateTeamWebhookRequest(BaseModel):
-    teams_webhook_url: str | None = None
 
 
 class TeamCreateRequest(BaseModel):
@@ -119,14 +99,9 @@ class AdminUserOut(BaseModel):
     email_verified: bool
     is_admin: bool
     team_id: int | None
-    can_notify_teams: bool
     created_at: dt.datetime
 
     model_config = {"from_attributes": True}
-
-
-class UpdateNotifyTeamsRequest(BaseModel):
-    can_notify_teams: bool
 
 
 class UpdateTeamRequest(BaseModel):
