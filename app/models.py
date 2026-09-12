@@ -22,10 +22,6 @@ class Team(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128), unique=True)
-    # Microsoft Teams webhook URL for this team's channel, used by the
-    # "Suggest to team" button -- a search doesn't inherently belong to one
-    # team, so this is scoped to the requester's own team rather than global.
-    teams_webhook_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     members: Mapped[list["User"]] = relationship(back_populates="team")
 
@@ -54,10 +50,6 @@ class User(Base):
     default_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     default_radius_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    # Per-account opt-in to the "Suggest to team" button on restaurant cards,
-    # set by an admin from the admin panel -- see Team.teams_webhook_url for
-    # where the notification actually gets sent (the user's own team).
-    can_notify_teams: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)
 
     team: Mapped["Team | None"] = relationship(back_populates="members")

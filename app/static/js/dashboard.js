@@ -443,27 +443,26 @@ function renderRestaurantCard(r, container) {
         });
     });
 
-    const notifyBtn = card.querySelector(".btn-notify-teams");
-    if (me && me.can_notify_teams) {
-        notifyBtn.hidden = false;
-        notifyBtn.addEventListener("click", async () => {
-            notifyBtn.disabled = true;
-            const res = await fetch(`/api/restaurants/${r.id}/notify-teams`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ companion_ids: selectedCompanionIds }),
-            });
-            if (res.ok) {
-                notifyBtn.textContent = "Suggested!";
-            } else {
-                notifyBtn.disabled = false;
-                const body = await res.json().catch(() => ({}));
-                alert(body.detail || "Failed to suggest to team.");
-            }
-        });
-    } else {
-        notifyBtn.remove();
-    }
+    card.querySelector(".btn-copy-teams").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        const companionNames = selectedCompanionIds
+            .map((id) => usersById.get(id)?.display_name)
+            .filter(Boolean);
+        const names = [me.display_name, ...companionNames];
+        const lines = [`🍽️ ${me.display_name} picked ${r.name}`, r.address];
+        if (names.length > 1) lines.push(`Joining: ${names.join(", ")}`);
+        if (r.maps_url) lines.push(r.maps_url);
+        const text = lines.join("\n");
+
+        const original = btn.textContent;
+        try {
+            await navigator.clipboard.writeText(text);
+            btn.textContent = "Copied!";
+        } catch (err) {
+            alert(`Couldn't copy automatically -- here's the text:\n\n${text}`);
+        }
+        setTimeout(() => { btn.textContent = original; }, 1500);
+    });
 
     card.querySelector(".btn-blacklist").addEventListener("click", async () => {
         await fetch(`/api/restaurants/${r.id}/blacklist`, { method: "POST" });
