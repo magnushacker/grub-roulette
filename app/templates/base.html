@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"{% if user and user.dark_mode %} data-theme="dark"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,6 +23,7 @@
         </a>
         {% if user %}
         <div class="topbar-right">
+            <button type="button" id="theme-toggle" class="link-button" title="Toggle dark mode">{{ "☀️" if user.dark_mode else "🌙" }}</button>
             <button type="button" id="open-help-modal" class="link-button">How it works</button>
             <button type="button" id="open-stats-modal" class="link-button">Stats</button>
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>
@@ -33,6 +34,23 @@
                 <button type="submit" class="link-button">Log out</button>
             </form>
         </div>
+        <script>
+            (function () {
+                const toggle = document.getElementById("theme-toggle");
+                toggle.addEventListener("click", async () => {
+                    const isDark = document.documentElement.dataset.theme === "dark";
+                    const next = !isDark;
+                    document.documentElement.dataset.theme = next ? "dark" : "light";
+                    toggle.textContent = next ? "☀️" : "🌙";
+                    if (window.setMapTheme) window.setMapTheme(next);
+                    await fetch("/api/users/me/theme", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ dark_mode: next }),
+                    });
+                });
+            })();
+        </script>
         <dialog id="help-modal">
             <h2>How the pick gets chosen</h2>
 

@@ -99,7 +99,17 @@ first) — no other behavior depends on team membership.
 joined by `Rating`, `Blacklist`, and `Visit`, each scoped to a single user +
 restaurant (with unique constraints preventing duplicate ratings/blacklist
 entries). Preferences that used to be simple scalars (disliked/preferred cuisines,
-default companions) are stored as JSON list columns directly on `User`.
+default companions) are stored as JSON list columns directly on `User`, alongside
+scalar prefs like `dark_mode`.
+
+**Theme:** dark mode is a per-user boolean (`User.dark_mode`), toggled from the
+topbar button in `base.html` (`PATCH /api/users/me/theme`). The chosen theme is
+rendered server-side as `data-theme="dark"` on `<html>` (set in `pages.py`/
+`admin.py`'s template context via `user.dark_mode`) to avoid a flash of the
+wrong theme, and every color in `style.css` is a CSS custom property with a
+`:root[data-theme="dark"]` override — new UI should keep using those variables
+rather than hardcoded colors so it stays theme-correct for free. The toggle also
+flips the Google Map's style array live via `window.setMapTheme` (`dashboard.js`).
 
 ## Conventions worth knowing
 

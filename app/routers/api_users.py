@@ -7,7 +7,15 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, User, Visit
-from app.schemas import BlacklistEntryOut, PreferencesRequest, RatingEntryOut, UpdateTeamRequest, UserOut, VisitEntryOut
+from app.schemas import (
+    BlacklistEntryOut,
+    PreferencesRequest,
+    RatingEntryOut,
+    UpdateTeamRequest,
+    UpdateThemeRequest,
+    UserOut,
+    VisitEntryOut,
+)
 
 RECENT_VISIT_DAYS = 7
 
@@ -48,6 +56,14 @@ def update_preferences(body: PreferencesRequest, db: Session = Depends(get_db), 
 @router.patch("/me/team", response_model=UserOut)
 def update_my_team(body: UpdateTeamRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
     current.team_id = body.team_id
+    db.commit()
+    db.refresh(current)
+    return current
+
+
+@router.patch("/me/theme", response_model=UserOut)
+def update_my_theme(body: UpdateThemeRequest, db: Session = Depends(get_db), current: User = Depends(get_current_user)):
+    current.dark_mode = body.dark_mode
     db.commit()
     db.refresh(current)
     return current
