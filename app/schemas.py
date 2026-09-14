@@ -71,8 +71,13 @@ class UserOut(BaseModel):
     default_lat: float | None
     default_lng: float | None
     default_radius_m: int | None
+    dark_mode: bool
 
     model_config = {"from_attributes": True}
+
+
+class UpdateThemeRequest(BaseModel):
+    dark_mode: bool
 
 
 class TeamOut(BaseModel):

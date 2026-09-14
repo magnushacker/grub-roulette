@@ -7,6 +7,35 @@
     --muted: #666;
     --accent: #d97706;
     --accent-fg: #ffffff;
+    --error: #b91c1c;
+    --success: #15803d;
+    --star-empty: #ccc;
+    --prefer-bg: #dcfce7;
+    --prefer-border: #16a34a;
+    --prefer-text: #14532d;
+    --avoid-bg: #fee2e2;
+    --avoid-border: #dc2626;
+    --avoid-text: #7f1d1d;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #16181c;
+    --panel-bg: #1f2226;
+    --border: #383c42;
+    --text: #e8e6e3;
+    --muted: #9a9a9a;
+    --accent: #f0a020;
+    --accent-fg: #1a1a1a;
+    --error: #f87171;
+    --success: #4ade80;
+    --star-empty: #555;
+    --prefer-bg: #14532d;
+    --prefer-border: #16a34a;
+    --prefer-text: #dcfce7;
+    --avoid-bg: #7f1d1d;
+    --avoid-border: #dc2626;
+    --avoid-text: #fee2e2;
 }
 
 * { box-sizing: border-box; }
@@ -122,7 +151,7 @@ select:focus {
     outline-offset: 1px;
 }
 
-.error { color: #b91c1c; }
+.error { color: var(--error); }
 
 input[type="range"] {
     width: 100%;
@@ -343,7 +372,7 @@ button.secondary {
 
 .star-picker {
     font-size: 1.2rem;
-    color: #ccc;
+    color: var(--star-empty);
 }
 
 .star-picker span { cursor: pointer; }
@@ -369,7 +398,7 @@ button.secondary {
 }
 
 .confirmed {
-    color: #15803d;
+    color: var(--success);
     font-weight: 600;
     font-size: 0.85rem;
 }
@@ -474,6 +503,8 @@ button.secondary {
 }
 
 dialog#account-modal, dialog#help-modal, dialog#stats-modal {
+    background: var(--panel-bg);
+    color: var(--text);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
@@ -561,15 +592,15 @@ dialog#account-modal select, dialog#account-modal input[type="text"] {
 }
 
 .chip[data-state="prefer"], .chip-legend[data-state="prefer"] {
-    background: #dcfce7;
-    border-color: #16a34a;
-    color: #14532d;
+    background: var(--prefer-bg);
+    border-color: var(--prefer-border);
+    color: var(--prefer-text);
 }
 
 .chip[data-state="avoid"], .chip-legend[data-state="avoid"] {
-    background: #fee2e2;
-    border-color: #dc2626;
-    color: #7f1d1d;
+    background: var(--avoid-bg);
+    border-color: var(--avoid-border);
+    color: var(--avoid-text);
     text-decoration: line-through;
 }
 

@@ -8,6 +8,24 @@ let highlightedCard = null;
 let cuisineUniverse = new Map(); // lowercase cuisine -> display-cased value
 let usersById = new Map(); // id -> user, for reading companions' own cuisine picks
 
+const NIGHT_MAP_STYLE = [
+    { elementType: "geometry", stylers: [{ color: "#212121" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#a3a3a3" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+    { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#3c3c3c" }] },
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#383838" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212121" }] },
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#4a4a4a" }] },
+    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2c2c2c" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+];
+
+function setMapTheme(dark) {
+    if (map) map.setOptions({ styles: dark ? NIGHT_MAP_STYLE : [] });
+}
+window.setMapTheme = setMapTheme;
+
 function initMap() {
     const hasDefault = me && me.default_lat != null;
     const startingCenter = hasDefault
@@ -17,6 +35,7 @@ function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
         center: startingCenter,
         zoom: hasDefault ? 15 : 13,
+        styles: me && me.dark_mode ? NIGHT_MAP_STYLE : [],
     });
 
     map.addListener("click", (e) => setOrigin(e.latLng.lat(), e.latLng.lng(), true));
