@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import datetime as dt
-import difflib
 import math
 import random
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models import Blacklist, Rating, Restaurant, User, Visit
-from app.services import google_places, yelp
+from app.services import google_places
+from app.services.app_settings import get_settings
 
 # Weights for the final ranking score. Rating matters most, then distance,
 # then whether the cuisine is one a participant prefers, then a random nudge
@@ -32,9 +31,6 @@ TOP_K = 8
 DIRECT_RATING_BLEND = 0.7
 CUISINE_AFFINITY_BLEND = 0.4
 
-NAME_MATCH_THRESHOLD = 0.6
-MERGE_DISTANCE_M = 75
-
 
 def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     r = 6_371_000
@@ -45,66 +41,14 @@ def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
-def _merge_sources(google_results: list[dict], yelp_results: list[dict]) -> list[dict]:
-    """Attach a matching Yelp business (if any) onto each Google result."""
-    remaining_yelp = list(yelp_results)
-    merged = []
-    for g in google_results:
-        match = None
-        for y in remaining_yelp:
-            if g["lat"] is None or y["lat"] is None:
-                continue
-            dist = haversine_m(g["lat"], g["lng"], y["lat"], y["lng"])
-            if dist > MERGE_DISTANCE_M:
-                continue
-            similarity = difflib.SequenceMatcher(None, g["name"].lower(), y["name"].lower()).ratio()
-            if similarity >= NAME_MATCH_THRESHOLD:
-                match = y
-                break
-        combined = dict(g)
-        if match:
-            combined["yelp_id"] = match["yelp_id"]
-            combined["yelp_rating"] = match["yelp_rating"]
-            combined["yelp_rating_count"] = match["yelp_rating_count"]
-            combined["cuisines"] = sorted(set(g["cuisines"]) | set(match["cuisines"]))
-            remaining_yelp.remove(match)
-        merged.append(combined)
-
-    # Any Yelp-only businesses (Google found nothing nearby that matched) still count.
-    for y in remaining_yelp:
-        merged.append(
-            {
-                "google_place_id": None,
-                "yelp_id": y["yelp_id"],
-                "name": y["name"],
-                "address": y["address"],
-                "lat": y["lat"],
-                "lng": y["lng"],
-                "cuisines": y["cuisines"],
-                "price_level": y["price_level"],
-                "google_rating": None,
-                "google_rating_count": None,
-                "yelp_rating": y["yelp_rating"],
-                "yelp_rating_count": y["yelp_rating_count"],
-                "maps_url": None,
-                # Yelp Fusion's search response has no business website field.
-                "website_url": None,
-            }
-        )
-    return merged
-
-
 def _upsert_restaurant(db: Session, data: dict) -> Restaurant:
     restaurant = None
     if data.get("google_place_id"):
         restaurant = db.scalar(select(Restaurant).where(Restaurant.google_place_id == data["google_place_id"]))
-    if restaurant is None and data.get("yelp_id"):
-        restaurant = db.scalar(select(Restaurant).where(Restaurant.yelp_id == data["yelp_id"]))
 
     if restaurant is None:
         restaurant = Restaurant(
             google_place_id=data.get("google_place_id"),
-            yelp_id=data.get("yelp_id"),
             name=data["name"],
             address=data.get("address", ""),
             lat=data["lat"],
@@ -123,13 +67,8 @@ def _upsert_restaurant(db: Session, data: dict) -> Restaurant:
     if data.get("google_rating") is not None:
         restaurant.google_rating = data["google_rating"]
         restaurant.google_rating_count = data.get("google_rating_count")
-    if data.get("yelp_rating") is not None:
-        restaurant.yelp_rating = data["yelp_rating"]
-        restaurant.yelp_rating_count = data.get("yelp_rating_count")
     if data.get("google_place_id"):
         restaurant.google_place_id = data["google_place_id"]
-    if data.get("yelp_id"):
-        restaurant.yelp_id = data["yelp_id"]
     if data.get("maps_url"):
         restaurant.maps_url = data["maps_url"]
     if data.get("website_url"):
@@ -140,10 +79,8 @@ def _upsert_restaurant(db: Session, data: dict) -> Restaurant:
 
 def search_and_cache_restaurants(db: Session, lat: float, lng: float, radius_m: int) -> list[Restaurant]:
     google_results = google_places.nearby_restaurants(lat, lng, radius_m)
-    yelp_results = yelp.nearby_restaurants(lat, lng, radius_m)
-    merged = _merge_sources(google_results, yelp_results)
 
-    restaurants = [_upsert_restaurant(db, data) for data in merged if data.get("lat") is not None]
+    restaurants = [_upsert_restaurant(db, data) for data in google_results if data.get("lat") is not None]
     db.commit()
     return restaurants
 
@@ -164,8 +101,7 @@ def record_seen_cuisines(user: User, restaurants: list[Restaurant]) -> None:
 
 
 def _external_rating(restaurant: Restaurant) -> float:
-    ratings = [r for r in (restaurant.google_rating, restaurant.yelp_rating) if r is not None]
-    return sum(ratings) / len(ratings) if ratings else 3.0
+    return restaurant.google_rating if restaurant.google_rating is not None else 3.0
 
 
 def _personal_rating(restaurant: Restaurant, participant_ids: list[int]) -> float | None:
@@ -230,7 +166,7 @@ def build_candidates(
         for b in db.scalars(select(Blacklist).where(Blacklist.user_id.in_(participant_ids)))
     }
 
-    cutoff = dt.date.today() - dt.timedelta(days=settings.exclude_days)
+    cutoff = dt.date.today() - dt.timedelta(days=get_settings(db).exclude_days)
     recently_visited_ids = {
         v.restaurant_id
         for v in db.scalars(

@@ -15,7 +15,7 @@ get filtered), and recent-visit exclusion.
 - **Backend:** FastAPI + SQLAlchemy 2.0 (typed `Mapped[...]` models), SQLite
 - **Frontend:** server-rendered Jinja2 pages + vanilla JS (no build step, no bundler) + Google Maps JavaScript API
 - **Auth:** built-in name/password accounts, signed session cookies (`SessionMiddleware`), optional email verification via Resend
-- **External data:** Google Places API (New) (primary) + Yelp Fusion (supplemental), merged by proximity/name matching
+- **External data:** Google Places API (New)
 
 There is no test suite, linter, or formatter configured in this repo.
 
@@ -50,22 +50,20 @@ frontend needs comes from JSON endpoints under `/api/*` consumed by
 **The suggestion algorithm** (`app/services/recommend.py`) is the core logic, run
 per-request from `POST /api/restaurants/suggest`:
 1. `search_and_cache_restaurants` fetches from `google_places.nearby_restaurants`
-   and `yelp.nearby_restaurants` in parallel-ish (sequential) calls, then
-   `_merge_sources` pairs up entries across the two providers by
-   distance (`MERGE_DISTANCE_M`) + fuzzy name match (`NAME_MATCH_THRESHOLD`,
-   `difflib.SequenceMatcher`). Merged results are upserted into the `restaurants`
-   table (`_upsert_restaurant`, keyed on `google_place_id`/`yelp_id`) so ratings,
-   blacklist entries, and visit history persist across searches.
+   and upserts each result into the `restaurants` table (`_upsert_restaurant`,
+   keyed on `google_place_id`) so ratings, blacklist entries, and visit history
+   persist across searches.
 2. `build_candidates` filters out anything blacklisted by the requester or any
    companion, anything matching a disliked cuisine of the requester or a
-   companion, and anything the *requester* (not companions) visited within
-   `EXCLUDE_DAYS`. Each remaining restaurant gets a blended rating — a direct
+   companion, and anything the *requester* (not companions) visited within the
+   admin-configurable `AppSettings.exclude_days` window (`app/services/app_settings.py`,
+   editable from `/admin`). Each remaining restaurant gets a blended rating — a direct
    personal rating if any participant rated it (`DIRECT_RATING_BLEND`), else an
    inferred "cuisine affinity" from participants' ratings of *other* restaurants
-   sharing a cuisine (`CUISINE_AFFINITY_BLEND`), else just the external
-   Google/Yelp average — then a weighted score from rating + distance + preferred
-   cuisine + a random term (`RATING_WEIGHT`/`DISTANCE_WEIGHT`/
-   `PREFERRED_CUISINE_WEIGHT`/`RANDOM_WEIGHT`, must sum to 1.0).
+   sharing a cuisine (`CUISINE_AFFINITY_BLEND`), else just the external Google
+   rating — then a weighted score from rating + distance + preferred cuisine +
+   a random term (`RATING_WEIGHT`/`DISTANCE_WEIGHT`/`PREFERRED_CUISINE_WEIGHT`/
+   `RANDOM_WEIGHT`, must sum to 1.0).
 3. `pick_suggestion` does a weighted-random choice among the top `TOP_K` scored
    candidates, so it isn't purely deterministic on score.
 
@@ -74,27 +72,24 @@ true/false, with a text-search fallback via `GET /api/restaurants/search` +
 Google's Text Search endpoint for "went somewhere else" cases) — this is what
 populates `Visit` rows for the recent-visit exclusion above.
 
-**External API clients** (`app/services/google_places.py`, `app/services/yelp.py`)
-are thin, stateless `httpx` wrappers that each return a list of normalized dicts
-(same shape: `name`, `address`, `lat`, `lng`, `cuisines`, `price_level`, rating
-fields, etc.) — this common shape is what makes `_merge_sources` possible. Both
-silently return `[]` when their API key isn't configured rather than erroring, but
-raise a `*Error` (`GooglePlacesError`/`YelpError`) on a non-200 response. Each
-maintains its own cuisine classification: Google whitelists known
-`*_restaurant` place types (`CUISINE_TYPES`), Yelp blacklists known non-cuisine
-categories (`NON_CUISINE_CATEGORIES`) since its taxonomy has no clean flag —
-adding a new cuisine type/category means touching the corresponding set.
-`google_places.nearby_restaurants` splits the search circle into 4 overlapping
-quadrant sub-searches (`_search_quadrants`) to work around the Nearby Search API's
-hard 20-result cap.
+**The external API client** (`app/services/google_places.py`) is a thin, stateless
+`httpx` wrapper returning a list of normalized dicts (`name`, `address`, `lat`,
+`lng`, `cuisines`, `price_level`, rating fields, etc.). It silently returns `[]`
+when `GOOGLE_PLACES_API_KEY` isn't configured rather than erroring, but raises
+`GooglePlacesError` on a non-200 response. It whitelists known `*_restaurant`
+place types (`CUISINE_TYPES`) for cuisine classification — adding a new cuisine
+type means adding to that set. `google_places.nearby_restaurants` splits the
+search circle into 4 overlapping quadrant sub-searches (`_search_quadrants`) to
+work around the Nearby Search API's hard 20-result cap.
 
 **Auth/admin model:** admin rights are granted by matching a verified email
 against the comma-separated `ADMIN_EMAILS` setting (`_sync_admin_status` in
 `app/routers/auth.py`, called on every login/registration) — this is the only way
 to bootstrap the first admin. Admins get an `/admin` console
 (`app/routers/admin.py` + `admin.html`/`admin.js`) for renaming/deleting users,
-resetting passwords, and managing teams (offices/locations), all under
-`get_current_admin`.
+resetting passwords, managing teams (offices/locations), and editing app-wide
+settings (currently just `exclude_days`, backed by the `AppSettings` singleton
+row — see `app/services/app_settings.py`), all under `get_current_admin`.
 
 **Teams** (`app/services/teams.py`) are just named locations users belong to,
 used only to sort the companion list in `GET /api/users` (same-team colleagues
@@ -108,8 +103,11 @@ default companions) are stored as JSON list columns directly on `User`.
 
 ## Conventions worth knowing
 
-- Settings are centralized in `app/config.py` (`pydantic-settings`, reads `.env`);
-  don't reach for `os.environ` directly elsewhere.
+- Deploy-time config (API keys, `DATABASE_URL`, etc.) is centralized in
+  `app/config.py` (`pydantic-settings`, reads `.env`); don't reach for
+  `os.environ` directly elsewhere. Runtime settings an admin should be able to
+  change without a redeploy (currently just `exclude_days`) live instead in the
+  `AppSettings` DB singleton (`app/services/app_settings.py`), edited from `/admin`.
 - Routers depend on `get_db`/`get_current_user` from `app/deps.py` /
   `app/database.py` rather than constructing sessions or checking
   `request.session` inline.

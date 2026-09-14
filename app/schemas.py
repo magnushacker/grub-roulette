@@ -20,8 +20,6 @@ class RestaurantOut(BaseModel):
     price_level: int | None
     google_rating: float | None
     google_rating_count: int | None
-    yelp_rating: float | None
-    yelp_rating_count: int | None
     maps_url: str | None
     website_url: str | None
     distance_m: float | None = None
@@ -118,6 +116,16 @@ class UpdateEmailRequest(BaseModel):
 
 class AdminResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
+
+
+class AppSettingsOut(BaseModel):
+    exclude_days: int
+
+    model_config = {"from_attributes": True}
+
+
+class UpdateAppSettingsRequest(BaseModel):
+    exclude_days: int = Field(ge=0, le=365)
 
 
 class SearchDayCount(BaseModel):

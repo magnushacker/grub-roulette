@@ -9,25 +9,35 @@ from app.models import Team, User
 from app.schemas import (
     AdminResetPasswordRequest,
     AdminUserOut,
+    AppSettingsOut,
     RenameTeamRequest,
     RenameUserRequest,
     TeamOut,
+    UpdateAppSettingsRequest,
     UpdateEmailRequest,
     UpdateTeamRequest,
 )
 from app.security import hash_password
+from app.services import app_settings
 from app.templates_env import templates
 
 router = APIRouter()
 
 
 @router.get("/admin")
-def admin_page(request: Request, user: User | None = Depends(get_current_user_optional)):
+def admin_page(
+    request: Request,
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
+):
     if user is None:
         return RedirectResponse(url="/login", status_code=303)
     if not user.is_admin:
         return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse("admin.html", {"request": request, "user": user})
+    return templates.TemplateResponse(
+        "admin.html",
+        {"request": request, "user": user, "exclude_days": app_settings.get_settings(db).exclude_days},
+    )
 
 
 @router.get("/api/admin/users", response_model=list[AdminUserOut])
@@ -146,3 +156,21 @@ def delete_team(team_id: int, db: Session = Depends(get_db), admin: User = Depen
         member.team_id = None
     db.delete(team)
     db.commit()
+
+
+@router.get("/api/admin/settings", response_model=AppSettingsOut)
+def get_app_settings(db: Session = Depends(get_db), admin: User = Depends(get_current_admin)):
+    return app_settings.get_settings(db)
+
+
+@router.patch("/api/admin/settings", response_model=AppSettingsOut)
+def update_app_settings(
+    body: UpdateAppSettingsRequest,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    settings = app_settings.get_settings(db)
+    settings.exclude_days = body.exclude_days
+    db.commit()
+    db.refresh(settings)
+    return settings

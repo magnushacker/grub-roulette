@@ -26,6 +26,15 @@ class Team(Base):
     members: Mapped[list["User"]] = relationship(back_populates="team")
 
 
+class AppSettings(Base):
+    """Singleton row (id is always 1) of admin-editable, app-wide settings."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    exclude_days: Mapped[int] = mapped_column(Integer, default=7)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -63,7 +72,6 @@ class Restaurant(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     google_place_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
-    yelp_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     address: Mapped[str] = mapped_column(String(512), default="")
     lat: Mapped[float] = mapped_column(Float)
@@ -72,8 +80,6 @@ class Restaurant(Base):
     price_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     google_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     google_rating_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    yelp_rating: Mapped[float | None] = mapped_column(Float, nullable=True)
-    yelp_rating_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     maps_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     last_fetched: Mapped[dt.datetime] = mapped_column(DateTime, default=dt.datetime.utcnow)

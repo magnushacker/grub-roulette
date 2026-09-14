@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     secret_key: str = "dev-insecure-secret-key"
     google_places_api_key: str = ""
     google_maps_js_api_key: str = ""
-    yelp_api_key: str = ""
     resend_api_key: str = ""
     email_from: str = ""
     app_base_url: str = "http://localhost:8000"
@@ -16,7 +15,6 @@ class Settings(BaseSettings):
     require_email_verification: bool = False
     database_url: str = "sqlite:///./lunch.db"
     default_radius_m: int = 1500
-    exclude_days: int = 7
     # Comma-separated emails that are auto-promoted to admin on register/login,
     # so there's a way to get an admin account without one already existing.
     admin_emails: str = ""
