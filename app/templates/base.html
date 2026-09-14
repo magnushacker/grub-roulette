@@ -23,7 +23,7 @@
         </a>
         {% if user %}
         <div class="topbar-right">
-            <button type="button" id="theme-toggle" class="link-button" title="Toggle dark mode">{{ "☀️" if user.dark_mode else "🌙" }}</button>
+            <button type="button" id="theme-toggle" class="icon-button" title="Toggle dark mode">{{ "☀️" if user.dark_mode else "🌙" }}</button>
             <button type="button" id="open-help-modal" class="link-button">How it works</button>
             <button type="button" id="open-stats-modal" class="link-button">Stats</button>
             <button type="button" id="open-account-modal" class="link-button">Hi, {{ user.display_name }}</button>

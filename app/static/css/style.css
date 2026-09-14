@@ -102,6 +102,18 @@ body {
     align-items: center;
 }
 
+.icon-button {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+    font-size: 1.1rem;
+    line-height: normal;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
 .container {
     padding: 24px 4vw;
     width: 100%;
