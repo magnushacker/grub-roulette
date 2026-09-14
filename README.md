@@ -48,11 +48,11 @@ For a given origin point, radius, and set of lunch companions:
 2. Drop any restaurant that:
    - you or a companion has blacklisted,
    - matches a cuisine you or a companion has marked as disliked, or
-   - you personally visited in the last `EXCLUDE_DAYS` (default 7) days.
+   - you personally visited in the last N days (the exclusion window, default 7 days, is editable by admins under Settings on the `/admin` page).
 3. Score each remaining restaurant from a blend of distance, rating (your own rating if you've rated it before, otherwise the external Google rating), and a random component.
 4. Pick a winner via weighted random choice among the top-scored candidates — good, close restaurants are favored, but it won't always be the literal top score.
 
-After a suggestion, confirm what you actually did ("I went here" / "I went somewhere else" with a search box) — this is what feeds the recent-visit exclusion so the same place won't come up again for a week.
+After a suggestion, confirm what you actually did ("I went here" / "I went somewhere else" with a search box) — this is what feeds the recent-visit exclusion above.
 
 ## Deploying to the cloud later
 

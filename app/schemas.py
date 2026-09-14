@@ -118,6 +118,16 @@ class AdminResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class AppSettingsOut(BaseModel):
+    exclude_days: int
+
+    model_config = {"from_attributes": True}
+
+
+class UpdateAppSettingsRequest(BaseModel):
+    exclude_days: int = Field(ge=0, le=365)
+
+
 class SearchDayCount(BaseModel):
     date: dt.date
     count: int

@@ -19,6 +19,14 @@
 </section>
 
 <section class="panel">
+    <h2>Settings</h2>
+    <label>Recent-visit exclusion window (days)
+        <input type="number" id="exclude-days" min="0" max="365" value="{{ exclude_days }}">
+    </label>
+    <button id="save-exclude-days" class="secondary">Save</button>
+</section>
+
+<section class="panel">
     <h2>Teams</h2>
     <div id="teams-list" class="companions-list"></div>
     <label>New team name

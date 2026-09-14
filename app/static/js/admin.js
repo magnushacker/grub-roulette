@@ -233,6 +233,26 @@ for (const th of document.querySelectorAll("#users-table th.sortable")) {
     });
 }
 
+document.getElementById("save-exclude-days").addEventListener("click", async () => {
+    const input = document.getElementById("exclude-days");
+    const excludeDays = parseInt(input.value, 10);
+    if (Number.isNaN(excludeDays) || excludeDays < 0) {
+        alert("Enter a non-negative number of days.");
+        return;
+    }
+    const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ exclude_days: excludeDays }),
+    });
+    if (res.ok) {
+        alert("Saved.");
+    } else {
+        const body = await res.json().catch(() => ({}));
+        alert(body.detail || "Failed to save setting.");
+    }
+});
+
 document.getElementById("add-team").addEventListener("click", async () => {
     const input = document.getElementById("new-team-name");
     const name = input.value.trim();

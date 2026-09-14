@@ -55,8 +55,9 @@ per-request from `POST /api/restaurants/suggest`:
    persist across searches.
 2. `build_candidates` filters out anything blacklisted by the requester or any
    companion, anything matching a disliked cuisine of the requester or a
-   companion, and anything the *requester* (not companions) visited within
-   `EXCLUDE_DAYS`. Each remaining restaurant gets a blended rating — a direct
+   companion, and anything the *requester* (not companions) visited within the
+   admin-configurable `AppSettings.exclude_days` window (`app/services/app_settings.py`,
+   editable from `/admin`). Each remaining restaurant gets a blended rating — a direct
    personal rating if any participant rated it (`DIRECT_RATING_BLEND`), else an
    inferred "cuisine affinity" from participants' ratings of *other* restaurants
    sharing a cuisine (`CUISINE_AFFINITY_BLEND`), else just the external Google
@@ -86,8 +87,9 @@ against the comma-separated `ADMIN_EMAILS` setting (`_sync_admin_status` in
 `app/routers/auth.py`, called on every login/registration) — this is the only way
 to bootstrap the first admin. Admins get an `/admin` console
 (`app/routers/admin.py` + `admin.html`/`admin.js`) for renaming/deleting users,
-resetting passwords, and managing teams (offices/locations), all under
-`get_current_admin`.
+resetting passwords, managing teams (offices/locations), and editing app-wide
+settings (currently just `exclude_days`, backed by the `AppSettings` singleton
+row — see `app/services/app_settings.py`), all under `get_current_admin`.
 
 **Teams** (`app/services/teams.py`) are just named locations users belong to,
 used only to sort the companion list in `GET /api/users` (same-team colleagues
@@ -101,8 +103,11 @@ default companions) are stored as JSON list columns directly on `User`.
 
 ## Conventions worth knowing
 
-- Settings are centralized in `app/config.py` (`pydantic-settings`, reads `.env`);
-  don't reach for `os.environ` directly elsewhere.
+- Deploy-time config (API keys, `DATABASE_URL`, etc.) is centralized in
+  `app/config.py` (`pydantic-settings`, reads `.env`); don't reach for
+  `os.environ` directly elsewhere. Runtime settings an admin should be able to
+  change without a redeploy (currently just `exclude_days`) live instead in the
+  `AppSettings` DB singleton (`app/services/app_settings.py`), edited from `/admin`.
 - Routers depend on `get_db`/`get_current_user` from `app/deps.py` /
   `app/database.py` rather than constructing sessions or checking
   `request.session` inline.

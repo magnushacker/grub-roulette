@@ -9,9 +9,9 @@ import random
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models import Blacklist, Rating, Restaurant, User, Visit
 from app.services import google_places
+from app.services.app_settings import get_settings
 
 # Weights for the final ranking score. Rating matters most, then distance,
 # then whether the cuisine is one a participant prefers, then a random nudge
@@ -166,7 +166,7 @@ def build_candidates(
         for b in db.scalars(select(Blacklist).where(Blacklist.user_id.in_(participant_ids)))
     }
 
-    cutoff = dt.date.today() - dt.timedelta(days=settings.exclude_days)
+    cutoff = dt.date.today() - dt.timedelta(days=get_settings(db).exclude_days)
     recently_visited_ids = {
         v.restaurant_id
         for v in db.scalars(

@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     require_email_verification: bool = False
     database_url: str = "sqlite:///./lunch.db"
     default_radius_m: int = 1500
-    exclude_days: int = 7
     # Comma-separated emails that are auto-promoted to admin on register/login,
     # so there's a way to get an admin account without one already existing.
     admin_emails: str = ""

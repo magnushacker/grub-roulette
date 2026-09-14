@@ -26,6 +26,15 @@ class Team(Base):
     members: Mapped[list["User"]] = relationship(back_populates="team")
 
 
+class AppSettings(Base):
+    """Singleton row (id is always 1) of admin-editable, app-wide settings."""
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    exclude_days: Mapped[int] = mapped_column(Integer, default=7)
+
+
 class User(Base):
     __tablename__ = "users"
 
