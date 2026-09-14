@@ -10,7 +10,6 @@
                 <th class="sortable" data-sort="email">Email<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="team">Team<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="is_admin">Admin<span class="sort-indicator"></span></th>
-                <th class="sortable" data-sort="can_notify_teams">Suggest to team<span class="sort-indicator"></span></th>
                 <th class="sortable" data-sort="created_at">Joined<span class="sort-indicator"></span></th>
                 <th></th>
             </tr>
@@ -21,17 +20,7 @@
 
 <section class="panel">
     <h2>Teams</h2>
-    <p class="hint">Each team can have its own Microsoft Teams webhook URL — e.g. a Power Automate flow triggered by "When a Teams webhook request is received". "Suggest to team" (see the Users table above) posts to the requester's own team's webhook.</p>
-    <table class="admin-table" id="teams-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Webhook URL</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="teams-tbody"></tbody>
-    </table>
+    <div id="teams-list" class="companions-list"></div>
     <label>New team name
         <input type="text" id="new-team-name" placeholder="e.g. Gothenburg">
     </label>

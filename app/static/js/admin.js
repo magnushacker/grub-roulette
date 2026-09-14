@@ -1,45 +1,25 @@
 let teams = [];
 
 async function loadTeams() {
-    const res = await fetch("/api/admin/teams");
+    const res = await fetch("/api/teams");
     teams = await res.json();
     renderTeamsList();
 }
 
 function renderTeamsList() {
-    const tbody = document.getElementById("teams-tbody");
-    tbody.innerHTML = "";
+    const el = document.getElementById("teams-list");
+    el.innerHTML = "";
     if (teams.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3">No teams yet.</td></tr>';
+        el.textContent = "No teams yet.";
         return;
     }
     for (const t of teams) {
-        const tr = document.createElement("tr");
-
-        const nameTd = document.createElement("td");
-        nameTd.textContent = t.name;
-        tr.appendChild(nameTd);
-
-        const webhookTd = document.createElement("td");
-        const webhookInput = document.createElement("input");
-        webhookInput.type = "text";
-        webhookInput.placeholder = "https://...";
-        webhookInput.value = t.teams_webhook_url || "";
-        webhookInput.addEventListener("change", async () => {
-            await fetch(`/api/admin/teams/${t.id}/webhook`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ teams_webhook_url: webhookInput.value.trim() || null }),
-            });
-        });
-        webhookTd.appendChild(webhookInput);
-        tr.appendChild(webhookTd);
-
-        const actionsTd = document.createElement("td");
+        const label = document.createElement("label");
+        label.textContent = t.name + " ";
         const rename = document.createElement("button");
         rename.type = "button";
-        rename.className = "secondary";
-        rename.textContent = "Rename";
+        rename.textContent = "✎";
+        rename.title = "Rename team";
         rename.addEventListener("click", async () => {
             const newName = prompt(`New name for "${t.name}":`, t.name);
             if (!newName || newName === t.name) return;
@@ -56,22 +36,19 @@ function renderTeamsList() {
                 alert(body.detail || "Failed to rename team.");
             }
         });
-        actionsTd.appendChild(rename);
-
+        label.appendChild(rename);
         const del = document.createElement("button");
         del.type = "button";
-        del.className = "secondary";
-        del.textContent = "Delete";
+        del.textContent = "×";
+        del.title = "Delete team";
         del.addEventListener("click", async () => {
             if (!confirm(`Delete team "${t.name}"? Members will be left without a team.`)) return;
             await fetch(`/api/admin/teams/${t.id}`, { method: "DELETE" });
             await loadTeams();
             await loadUsers();
         });
-        actionsTd.appendChild(del);
-
-        tr.appendChild(actionsTd);
-        tbody.appendChild(tr);
+        label.appendChild(del);
+        el.appendChild(label);
     }
 }
 
@@ -98,20 +75,6 @@ function teamSelectFor(user) {
     return select;
 }
 
-function notifyTeamsCheckboxFor(user) {
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = user.can_notify_teams;
-    checkbox.addEventListener("change", async () => {
-        await fetch(`/api/admin/users/${user.id}/notify-teams`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ can_notify_teams: checkbox.checked }),
-        });
-    });
-    return checkbox;
-}
-
 let currentUsers = [];
 // Matches the backend's own default order (list_users sorts by display_name).
 let userSort = { key: "display_name", dir: "asc" };
@@ -123,7 +86,6 @@ function teamNameFor(u) {
 
 function compareUsers(a, b, key) {
     if (key === "is_admin") return (a.is_admin === b.is_admin) ? 0 : a.is_admin ? 1 : -1;
-    if (key === "can_notify_teams") return (a.can_notify_teams === b.can_notify_teams) ? 0 : a.can_notify_teams ? 1 : -1;
     if (key === "created_at") return new Date(a.created_at) - new Date(b.created_at);
     if (key === "team") return teamNameFor(a).localeCompare(teamNameFor(b));
     // display_name/email -- email can be null on legacy accounts.
@@ -170,10 +132,6 @@ function renderUsersTable() {
         const adminTd = document.createElement("td");
         adminTd.textContent = u.is_admin ? "Yes" : "";
         tr.appendChild(adminTd);
-
-        const notifyTeamsTd = document.createElement("td");
-        notifyTeamsTd.appendChild(notifyTeamsCheckboxFor(u));
-        tr.appendChild(notifyTeamsTd);
 
         const joinedTd = document.createElement("td");
         // created_at is UTC but serialized without a timezone suffix, so tell

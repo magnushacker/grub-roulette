@@ -5,8 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Blacklist, Rating, Restaurant, Search, User
-from app.schemas import NotifyTeamsRequest, RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
-from app.services import teams_notify
+from app.schemas import RateRequest, RestaurantOut, SuggestRequest, SuggestResponse
 from app.services.recommend import (
     build_candidates,
     pick_suggestion,
@@ -83,46 +82,6 @@ def delete_rating(restaurant_id: int, db: Session = Depends(get_db), current: Us
     if existing is not None:
         db.delete(existing)
         db.commit()
-
-
-@router.post("/{restaurant_id}/notify-teams", status_code=204)
-def notify_teams(
-    restaurant_id: int,
-    body: NotifyTeamsRequest,
-    db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
-):
-    if not current.can_notify_teams:
-        raise HTTPException(status_code=403, detail="Teams notifications aren't enabled for your account")
-
-    if current.team_id is None:
-        raise HTTPException(status_code=400, detail="You're not in a team yet -- set one in your account settings")
-    webhook_url = current.team.teams_webhook_url
-    if not webhook_url:
-        raise HTTPException(status_code=400, detail="Your team doesn't have a Teams webhook configured yet -- ask an admin to set one")
-
-    restaurant = db.get(Restaurant, restaurant_id)
-    if restaurant is None:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
-
-    companions = []
-    if body.companion_ids:
-        companions = list(db.scalars(select(User).where(User.id.in_(body.companion_ids))))
-    names = [current.display_name] + [c.display_name for c in companions]
-
-    lines = [restaurant.address]
-    if len(names) > 1:
-        lines.append(f"Joining: {', '.join(names)}")
-
-    try:
-        teams_notify.notify(
-            webhook_url,
-            title=f"🍽️ {current.display_name} picked {restaurant.name}",
-            lines=lines,
-            action_url=restaurant.maps_url,
-        )
-    except teams_notify.TeamsNotifyError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
 
 
 @router.post("/{restaurant_id}/blacklist", status_code=204)
