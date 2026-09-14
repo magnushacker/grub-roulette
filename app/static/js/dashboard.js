@@ -378,7 +378,6 @@ function ratingLine(r) {
     const parts = [];
     if (r.combined_rating != null) parts.push(`${r.combined_rating.toFixed(1)} ★`);
     if (r.google_rating != null) parts.push(`Google ${r.google_rating} (${r.google_rating_count ?? 0})`);
-    if (r.yelp_rating != null) parts.push(`Yelp ${r.yelp_rating} (${r.yelp_rating_count ?? 0})`);
     if (r.distance_m != null) parts.push(`${Math.round(r.distance_m)} m away`);
     if (r.price_level != null) parts.push("$".repeat(r.price_level));
     return parts.join(" · ");

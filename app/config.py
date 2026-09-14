@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     secret_key: str = "dev-insecure-secret-key"
     google_places_api_key: str = ""
     google_maps_js_api_key: str = ""
-    yelp_api_key: str = ""
     resend_api_key: str = ""
     email_from: str = ""
     app_base_url: str = "http://localhost:8000"

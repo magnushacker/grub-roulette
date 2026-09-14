@@ -20,8 +20,6 @@ class RestaurantOut(BaseModel):
     price_level: int | None
     google_rating: float | None
     google_rating_count: int | None
-    yelp_rating: float | None
-    yelp_rating_count: int | None
     maps_url: str | None
     website_url: str | None
     distance_m: float | None = None
