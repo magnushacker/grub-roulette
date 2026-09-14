@@ -20,7 +20,7 @@ def dashboard(
 ):
     if user is None:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
@@ -30,3 +30,8 @@ def dashboard(
             "exclude_days": app_settings.get_settings(db).exclude_days,
         },
     )
+    # Admin-configurable settings (exclude_days) are baked into this page at
+    # render time, so a stale cached copy (e.g. the browser's back/forward
+    # cache) can silently show an outdated value after an admin changes it.
+    response.headers["Cache-Control"] = "no-store"
+    return response

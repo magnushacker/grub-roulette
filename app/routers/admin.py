@@ -34,10 +34,15 @@ def admin_page(
         return RedirectResponse(url="/login", status_code=303)
     if not user.is_admin:
         return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         "admin.html",
         {"request": request, "user": user, "exclude_days": app_settings.get_settings(db).exclude_days},
     )
+    # exclude_days is baked into this page at render time, so a stale cached
+    # copy (e.g. the browser's back/forward cache) can show an outdated value
+    # right after it's been changed here.
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.get("/api/admin/users", response_model=list[AdminUserOut])
