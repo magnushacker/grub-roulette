@@ -13,16 +13,19 @@ from app.models import Blacklist, Rating, Restaurant, User, Visit
 from app.services import google_places
 from app.services.app_settings import get_settings
 
-# Weights for the final ranking score. Rating matters most, then distance,
-# then whether the cuisine is one a participant prefers, then a random nudge
-# so the same top pick doesn't always win.
-RATING_WEIGHT = 0.45
-DISTANCE_WEIGHT = 0.25
+# Weights for the final ranking score. The random term is deliberately the
+# largest: with rating+distance dominating, the same handful of well-rated,
+# nearby places kept winning the TOP_K cut on every search (only their order
+# among themselves varied), so "Find lunch" cycled between the same 4-5
+# spots. Giving randomness real weight (rather than a small tie-breaking
+# nudge) lets more of the eligible restaurants make the cut and get picked.
+RATING_WEIGHT = 0.30
+DISTANCE_WEIGHT = 0.20
 PREFERRED_CUISINE_WEIGHT = 0.15
-RANDOM_WEIGHT = 0.15
+RANDOM_WEIGHT = 0.35
 
 # How many of the top-scored candidates are eligible for the final weighted-random pick.
-TOP_K = 8
+TOP_K = 15
 
 # When a participant has rated this exact restaurant, that rating dominates the external
 # one. When nobody has, but a participant has rated other restaurants sharing a cuisine
