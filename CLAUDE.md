@@ -63,7 +63,12 @@ per-request from `POST /api/restaurants/suggest`:
    sharing a cuisine (`CUISINE_AFFINITY_BLEND`), else just the external Google
    rating — then a weighted score from rating + distance + preferred cuisine +
    a random term (`RATING_WEIGHT`/`DISTANCE_WEIGHT`/`PREFERRED_CUISINE_WEIGHT`/
-   `RANDOM_WEIGHT`, must sum to 1.0).
+   `RANDOM_WEIGHT`, must sum to 1.0). `RANDOM_WEIGHT` is deliberately the
+   largest of the four — with rating+distance dominating, the same well-rated
+   nearby places kept winning the `TOP_K` cut on every search, so "Find lunch"
+   cycled between the same handful of restaurants; a bigger random term means
+   the pool of restaurants that can make the cut, not just their order within
+   it, actually varies between searches.
 3. `pick_suggestion` does a weighted-random choice among the top `TOP_K` scored
    candidates, so it isn't purely deterministic on score.
 
