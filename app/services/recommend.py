@@ -13,16 +13,18 @@ from app.models import Blacklist, Rating, Restaurant, User, Visit
 from app.services import google_places
 from app.services.app_settings import get_settings
 
-# Weights for the final ranking score. The random term is deliberately the
-# largest: with rating+distance dominating, the same handful of well-rated,
-# nearby places kept winning the TOP_K cut on every search (only their order
-# among themselves varied), so "Find lunch" cycled between the same 4-5
+# Weights for the final ranking score. Distance deliberately isn't one of
+# them: every candidate is already inside the requested search radius, so
+# that filter is the only distance constraint that matters, and scoring it
+# again just biased every search toward the nearest few places. The random
+# term is deliberately the largest: with rating dominating, the same handful
+# of well-rated places kept winning the TOP_K cut on every search (only their
+# order among themselves varied), so "Find lunch" cycled between the same 4-5
 # spots. Giving randomness real weight (rather than a small tie-breaking
 # nudge) lets more of the eligible restaurants make the cut and get picked.
-RATING_WEIGHT = 0.30
-DISTANCE_WEIGHT = 0.20
-PREFERRED_CUISINE_WEIGHT = 0.15
-RANDOM_WEIGHT = 0.35
+RATING_WEIGHT = 0.35
+PREFERRED_CUISINE_WEIGHT = 0.20
+RANDOM_WEIGHT = 0.45
 
 # How many of the top-scored candidates are eligible for the final weighted-random pick.
 TOP_K = 15
@@ -203,11 +205,9 @@ def build_candidates(
             else:
                 combined_rating = external
 
-        norm_distance = min(distance_m / radius_m, 1.0)
         is_preferred = any(c.lower() in preferred_cuisines for c in restaurant.cuisines)
         score = (
             RATING_WEIGHT * (combined_rating / 5)
-            + DISTANCE_WEIGHT * (1 - norm_distance)
             + PREFERRED_CUISINE_WEIGHT * (1.0 if is_preferred else 0.0)
             + RANDOM_WEIGHT * random.random()
         )

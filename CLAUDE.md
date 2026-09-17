@@ -61,11 +61,15 @@ per-request from `POST /api/restaurants/suggest`:
    personal rating if any participant rated it (`DIRECT_RATING_BLEND`), else an
    inferred "cuisine affinity" from participants' ratings of *other* restaurants
    sharing a cuisine (`CUISINE_AFFINITY_BLEND`), else just the external Google
-   rating — then a weighted score from rating + distance + preferred cuisine +
-   a random term (`RATING_WEIGHT`/`DISTANCE_WEIGHT`/`PREFERRED_CUISINE_WEIGHT`/
-   `RANDOM_WEIGHT`, must sum to 1.0). `RANDOM_WEIGHT` is deliberately the
-   largest of the four — with rating+distance dominating, the same well-rated
-   nearby places kept winning the `TOP_K` cut on every search, so "Find lunch"
+   rating — then a weighted score from rating + preferred cuisine + a random
+   term (`RATING_WEIGHT`/`PREFERRED_CUISINE_WEIGHT`/`RANDOM_WEIGHT`, must sum
+   to 1.0). Distance is *not* one of the score terms: candidates outside
+   `radius_m` are dropped outright, and that radius filter is treated as the
+   whole distance constraint, so being marginally closer no longer earns a
+   ranking bonus. Distance is still computed per candidate for the radius cut
+   and for `distance_m` in the API response. `RANDOM_WEIGHT` is deliberately
+   the largest of the three — with rating dominating, the same well-rated
+   places kept winning the `TOP_K` cut on every search, so "Find lunch"
    cycled between the same handful of restaurants; a bigger random term means
    the pool of restaurants that can make the cut, not just their order within
    it, actually varies between searches.
